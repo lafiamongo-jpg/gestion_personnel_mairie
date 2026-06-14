@@ -6,6 +6,7 @@
 @inject CongeService CongeService
 @inject AgentService AgentService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject AuthStateService AuthState
 
 <PageTitle>Gestion des Congés</PageTitle>
 
@@ -13,7 +14,7 @@
 
     <!-- En-tête -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>🏖️ Gestion des Congés</h2>
+        <h2>🏖️ @(AuthState.EstAdmin ? "Gestion des Congés" : "Mes Congés")</h2>
         <button class="btn btn-primary" @onclick="OuvrirModalDemande">
             ➕ Nouvelle demande
         </button>
@@ -87,14 +88,21 @@
                         <td>
                             @if (demande.Statut == "attente")
                             {
-                                <button class="btn btn-sm btn-success me-1"
-                                        @onclick="() => OuvrirModalApprouver(demande)">
-                                    ✅ Approuver
-                                </button>
-                                <button class="btn btn-sm btn-danger"
-                                        @onclick="() => OuvrirModalRefuser(demande)">
-                                    ❌ Refuser
-                                </button>
+                                @if (AuthState.EstAdmin)
+                                {
+                                    <button class="btn btn-sm btn-success me-1"
+                                            @onclick="() => OuvrirModalApprouver(demande)">
+                                        ✅ Approuver
+                                    </button>
+                                    <button class="btn btn-sm btn-danger"
+                                            @onclick="() => OuvrirModalRefuser(demande)">
+                                        ❌ Refuser
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted" style="font-size:0.82rem">⏳ En attente de traitement</span>
+                                }
                             }
                             else if (demande.Conge != null)
                             {
@@ -123,16 +131,25 @@
                     <button type="button" class="btn-close" @onclick="() => showModalDemande = false"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Agent</label>
-                        <select class="form-select" @bind="nouvelleDemande.IdAgent">
-                            <option value="0">-- Choisir un agent --</option>
-                            @foreach (var agent in agents)
-                            {
-                                <option value="@agent.Id">@agent.NomComplet</option>
-                            }
-                        </select>
-                    </div>
+                    @if (AuthState.EstAdmin)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Agent</label>
+                            <select class="form-select" @bind="nouvelleDemande.IdAgent">
+                                <option value="0">-- Choisir un agent --</option>
+                                @foreach (var agent in agents)
+                                {
+                                    <option value="@agent.Id">@agent.NomComplet</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info mb-3">
+                            📋 Demande pour : <strong>@(agents.FirstOrDefault()?.NomComplet ?? "Vous")</strong>
+                        </div>
+                    }
                     <div class="mb-3">
                         <label class="form-label">Commentaire / Motif</label>
                         <textarea class="form-control" rows="3"
@@ -254,13 +271,28 @@
 
     protected override void OnInitialized()
     {
-        toutesLesdemandes = CongeService.GetAllDemandes();
-        agents = AgentService.GetAll();
+        // Admin voit tout, Agent voit seulement ses demandes
+        if (AuthState.EstAdmin)
+            toutesLesdemandes = CongeService.GetAllDemandes();
+        else if (AuthState.AgentId.HasValue)
+            toutesLesdemandes = CongeService.GetDemandesByAgent(AuthState.AgentId.Value);
+
+        // Pour le modal : admin choisit l'agent, agent est fixé
+        agents = AuthState.EstAdmin
+            ? AgentService.GetAll()
+            : (AuthState.AgentId.HasValue
+                ? new List<Agent> { AgentService.GetById(AuthState.AgentId.Value)! }.Where(a => a != null).ToList()
+                : new List<Agent>());
     }
 
     private void OuvrirModalDemande()
     {
         nouvelleDemande = new DemandeConge();
+
+        // Si agent, pré-sélectionner son propre ID
+        if (!AuthState.EstAdmin && AuthState.AgentId.HasValue)
+            nouvelleDemande.IdAgent = AuthState.AgentId.Value;
+
         erreurDemande = null;
         showModalDemande = true;
     }
@@ -291,7 +323,13 @@
         }
 
         CongeService.SoumettreDemande(nouvelleDemande);
-        toutesLesdemandes = CongeService.GetAllDemandes();
+
+        // Recharger selon le rôle
+        if (AuthState.EstAdmin)
+            toutesLesdemandes = CongeService.GetAllDemandes();
+        else if (AuthState.AgentId.HasValue)
+            toutesLesdemandes = CongeService.GetDemandesByAgent(AuthState.AgentId.Value);
+
         showModalDemande = false;
         StateHasChanged();
     }
@@ -306,7 +344,12 @@
         }
 
         CongeService.Approuver(demandeSelectionnee.IdDemande, dateDebut, dateFin, typeConge);
-        toutesLesdemandes = CongeService.GetAllDemandes();
+
+        if (AuthState.EstAdmin)
+            toutesLesdemandes = CongeService.GetAllDemandes();
+        else if (AuthState.AgentId.HasValue)
+            toutesLesdemandes = CongeService.GetDemandesByAgent(AuthState.AgentId.Value);
+
         showModalApprouver = false;
         StateHasChanged();
     }
@@ -316,7 +359,12 @@
         if (demandeSelectionnee == null) return;
 
         CongeService.Refuser(demandeSelectionnee.IdDemande, motifRefus);
-        toutesLesdemandes = CongeService.GetAllDemandes();
+
+        if (AuthState.EstAdmin)
+            toutesLesdemandes = CongeService.GetAllDemandes();
+        else if (AuthState.AgentId.HasValue)
+            toutesLesdemandes = CongeService.GetDemandesByAgent(AuthState.AgentId.Value);
+
         showModalRefuser = false;
         StateHasChanged();
     }

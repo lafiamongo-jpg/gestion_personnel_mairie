@@ -1,8 +1,13 @@
 ﻿@page "/"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
+@using GestionPersonnelMairie.Services
+@using GestionPersonnelMairie.Models
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
+@inject AuthStateService AuthState
+@inject AgentService AgentService
+@inject CongeService CongeService
 
 <PageTitle>Accueil – Gestion Personnel Mairie de Banikoara</PageTitle>
 
@@ -11,18 +16,9 @@
 <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Sora', sans-serif; background: #f0f2f7; color: #0f1c35; }
-
-    /* TOPBAR */
-    .topbar {
-        background: #0a1628;
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 0 48px; height: 56px;
-    }
+    .topbar { background: #0a1628; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 56px; }
     .tb-left { display: flex; align-items: center; gap: 16px; }
-    .tb-logo {
-        width: 32px; height: 32px; background: #2563eb;
-        border-radius: 6px; display: flex; align-items: center; justify-content: center;
-    }
+    .tb-logo { width: 32px; height: 32px; background: #2563eb; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
     .tb-logo svg { width: 18px; height: 18px; }
     .tb-name { font-size: 13px; font-weight: 600; color: #fff; letter-spacing: .3px; }
     .tb-sep { width: 1px; height: 18px; background: rgba(255,255,255,.15); }
@@ -30,169 +26,53 @@
     .tb-right { display: flex; align-items: center; gap: 8px; }
     .tb-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; }
     .tb-status { font-size: 11px; color: #64748b; }
-    .tb-user {
-        width: 30px; height: 30px; background: #1e3a5f;
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        font-size: 11px; font-weight: 600; color: #93c5fd; margin-left: 8px;
-    }
-
-    /* NAVBAR */
-    .navbar {
-        background: #fff; border-bottom: 1px solid #e2e8f0;
-        padding: 0 48px; display: flex; align-items: center; height: 52px;
-    }
-    .navbar a {
-        font-size: 13px; color: #475569; text-decoration: none;
-        padding: 0 18px; height: 52px; display: flex; align-items: center;
-        border-bottom: 2px solid transparent; transition: .15s; font-weight: 400;
-    }
+    .navbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 48px; display: flex; align-items: center; height: 52px; }
+    .navbar a { font-size: 13px; color: #475569; text-decoration: none; padding: 0 18px; height: 52px; display: flex; align-items: center; border-bottom: 2px solid transparent; transition: .15s; font-weight: 400; }
     .navbar a:hover { color: #2563eb; background: #f8faff; }
     .navbar a.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 500; }
     .nav-end { margin-left: auto; }
-    .btn-new {
-        background: #2563eb; color: #fff; border: none;
-        border-radius: 7px; padding: 8px 18px;
-        font-size: 12px; font-weight: 500; cursor: pointer;
-        font-family: 'Sora', sans-serif; letter-spacing: .2px;
-    }
-    .btn-new:hover { background: #1d4ed8; }
-
-    /* HERO */
-    .hero-wrap {
-        position: relative; overflow: hidden;
-        padding: 56px 48px 0;
-        background: #0a1628;
-    }
-    .hero-bg {
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/H%C3%B4tel_de_ville_de_Cotonou.jpg/1280px-H%C3%B4tel_de_ville_de_Cotonou.jpg');
-        background-size: cover;
-        background-position: center top;
-        opacity: 0.22;
-    }
-    .hero-overlay {
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        background: linear-gradient(
-            135deg,
-            rgba(8,16,32,0.95) 0%,
-            rgba(10,22,40,0.88) 40%,
-            rgba(15,28,60,0.72) 100%
-        );
-    }
-    .hero-inner {
-        display: grid; grid-template-columns: 1fr 420px;
-        gap: 40px; align-items: end;
-        position: relative; z-index: 2;
-    }
+    .hero-wrap { position: relative; overflow: hidden; padding: 56px 48px 0; background: #0a1628; }
+    .hero-bg { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/H%C3%B4tel_de_ville_de_Cotonou.jpg/1280px-H%C3%B4tel_de_ville_de_Cotonou.jpg'); background-size: cover; background-position: center top; opacity: 0.22; }
+    .hero-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(8,16,32,0.95) 0%, rgba(10,22,40,0.88) 40%, rgba(15,28,60,0.72) 100%); }
+    .hero-inner { display: grid; grid-template-columns: 1fr 420px; gap: 40px; align-items: end; position: relative; z-index: 2; }
     .hero-left { padding-bottom: 48px; }
-    .hero-eyebrow {
-        display: inline-flex; align-items: center; gap: 8px;
-        background: rgba(37,99,235,.2);
-        border: 1px solid rgba(37,99,235,.4);
-        border-radius: 20px; padding: 5px 14px; margin-bottom: 28px;
-    }
-    .hero-eyebrow span {
-        font-size: 11px; color: #93c5fd;
-        letter-spacing: .8px; text-transform: uppercase; font-weight: 500;
-    }
-    .pulse {
-        width: 6px; height: 6px; background: #22c55e;
-        border-radius: 50%; animation: blink 2s infinite;
-    }
+    .hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; background: rgba(37,99,235,.2); border: 1px solid rgba(37,99,235,.4); border-radius: 20px; padding: 5px 14px; margin-bottom: 28px; }
+    .hero-eyebrow span { font-size: 11px; color: #93c5fd; letter-spacing: .8px; text-transform: uppercase; font-weight: 500; }
+    .pulse { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; animation: blink 2s infinite; }
     @@keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
-    .hero h1 {
-        font-family: 'Lora', serif; font-size: 44px; font-weight: 600;
-        color: #fff; line-height: 1.2; margin-bottom: 16px;
-    }
+    .hero h1 { font-family: 'Lora', serif; font-size: 44px; font-weight: 600; color: #fff; line-height: 1.2; margin-bottom: 16px; }
     .hero h1 em { font-style: italic; color: #60a5fa; }
-    .hero-desc {
-        font-size: 14px; color: #94a3b8; line-height: 1.75;
-        max-width: 480px; margin-bottom: 36px; font-weight: 300;
-    }
+    .hero-desc { font-size: 14px; color: #94a3b8; line-height: 1.75; max-width: 480px; margin-bottom: 36px; font-weight: 300; }
     .hero-btns { display: flex; gap: 12px; }
-    .btn-hero-p {
-        background: #2563eb; color: #fff; border: none; border-radius: 8px;
-        padding: 12px 24px; font-size: 13px; font-weight: 500;
-        cursor: pointer; font-family: 'Sora', sans-serif;
-    }
+    .btn-hero-p { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'Sora', sans-serif; }
     .btn-hero-p:hover { background: #1d4ed8; }
-    .btn-hero-g {
-        background: rgba(255,255,255,.08); color: #e2e8f0;
-        border: 1px solid rgba(255,255,255,.2); border-radius: 8px;
-        padding: 11px 22px; font-size: 13px;
-        cursor: pointer; font-family: 'Sora', sans-serif;
-    }
+    .btn-hero-g { background: rgba(255,255,255,.08); color: #e2e8f0; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; padding: 11px 22px; font-size: 13px; cursor: pointer; font-family: 'Sora', sans-serif; }
     .btn-hero-g:hover { background: rgba(255,255,255,.14); }
-    .hero-card {
-        background: rgba(255,255,255,.07);
-        border: 1px solid rgba(255,255,255,.12);
-        border-radius: 12px 12px 0 0; padding: 24px;
-        backdrop-filter: blur(8px);
-    }
-    .hc-title {
-        font-size: 11px; color: #64748b;
-        text-transform: uppercase; letter-spacing: .8px;
-        margin-bottom: 18px; font-weight: 500;
-    }
+    .hero-card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); border-radius: 12px 12px 0 0; padding: 24px; backdrop-filter: blur(8px); }
+    .hc-title { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 18px; font-weight: 500; }
     .hc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .hc-stat {
-        background: rgba(255,255,255,.06); border-radius: 8px;
-        padding: 14px 16px; border: 1px solid rgba(255,255,255,.08);
-    }
+    .hc-stat { background: rgba(255,255,255,.06); border-radius: 8px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.08); }
     .hc-n { font-family: 'Lora', serif; font-size: 28px; font-weight: 600; color: #fff; line-height: 1; }
     .hc-l { font-size: 11px; color: #64748b; margin-top: 4px; }
     .hc-d { font-size: 11px; margin-top: 6px; font-weight: 500; }
-    .up { color: #22c55e; }
-    .warn { color: #f59e0b; }
-    .neu { color: #60a5fa; }
-
-    /* KPI BAND */
-    .kpi-band {
-        background: #fff; border-bottom: 1px solid #e2e8f0;
-        display: grid; grid-template-columns: repeat(4, 1fr);
-    }
+    .up { color: #22c55e; } .warn { color: #f59e0b; } .neu { color: #60a5fa; }
+    .kpi-band { background: #fff; border-bottom: 1px solid #e2e8f0; display: grid; grid-template-columns: repeat(4, 1fr); }
     .kpi-item { padding: 22px 32px; border-right: 1px solid #e2e8f0; position: relative; }
     .kpi-item:last-child { border-right: none; }
     .kpi-item::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-    .kpi-item.c1::before { background: #2563eb; }
-    .kpi-item.c2::before { background: #f59e0b; }
-    .kpi-item.c3::before { background: #10b981; }
-    .kpi-item.c4::before { background: #8b5cf6; }
+    .kpi-item.c1::before { background: #2563eb; } .kpi-item.c2::before { background: #f59e0b; } .kpi-item.c3::before { background: #10b981; } .kpi-item.c4::before { background: #8b5cf6; }
     .kpi-num { font-family: 'Lora', serif; font-size: 30px; font-weight: 600; color: #0f1c35; line-height: 1; }
     .kpi-label { font-size: 11px; color: #94a3b8; margin-top: 5px; text-transform: uppercase; letter-spacing: .6px; }
     .kpi-delta { font-size: 11px; margin-top: 5px; font-weight: 500; }
-
-    /* MAIN */
-    .main-grid {
-        display: grid; grid-template-columns: 1fr 340px;
-        gap: 24px; padding: 28px 48px;
-        max-width: 1400px; margin: 0 auto;
-    }
-    .section-title {
-        font-size: 11px; text-transform: uppercase;
-        letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-bottom: 14px;
-    }
-
-    /* MODULES */
+    .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; padding: 28px 48px; max-width: 1400px; margin: 0 auto; }
+    .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-bottom: 14px; }
     .modules-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 24px; }
-    .module-card {
-        background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
-        padding: 20px; cursor: pointer; transition: .18s;
-        text-decoration: none; color: inherit; display: block;
-    }
-    .module-card:hover {
-        border-color: #2563eb; transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(37,99,235,.1);
-    }
-    .module-icon {
-        width: 42px; height: 42px; border-radius: 10px;
-        display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
-    }
+    .module-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; cursor: pointer; transition: .18s; text-decoration: none; color: inherit; display: block; }
+    .module-card:hover { border-color: #2563eb; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,.1); }
+    .module-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
     .module-name { font-size: 13px; font-weight: 600; color: #0f1c35; margin-bottom: 3px; }
     .module-desc { font-size: 11px; color: #94a3b8; line-height: 1.5; }
-    .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; margin-top: 8px; }
-
-    /* ACTIVITY */
+    .badge-module { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; margin-top: 8px; }
     .activity-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
     .card-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
     .card-header span { font-size: 13px; font-weight: 600; color: #0f1c35; }
@@ -205,22 +85,15 @@
     .activity-detail { font-size: 11px; color: #94a3b8; margin-top: 2px; }
     .status-pill { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 10px; }
     .activity-time { font-size: 10px; color: #cbd5e1; text-align: right; margin-top: 3px; }
-
-    /* SIDE */
     .calendar-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 16px; }
     .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .cal-month { font-size: 13px; font-weight: 600; color: #0f1c35; }
-    .cal-nav { display: flex; gap: 6px; }
-    .cal-nav span { cursor: pointer; color: #94a3b8; font-size: 16px; line-height: 1; padding: 2px 4px; }
-    .cal-nav span:hover { color: #2563eb; }
     .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; text-align: center; }
     .cal-day-header { font-size: 10px; color: #cbd5e1; padding: 4px; font-weight: 600; }
     .cal-day { font-size: 11px; color: #475569; padding: 6px 4px; border-radius: 5px; cursor: pointer; transition: .12s; position: relative; }
     .cal-day:hover { background: #f0f4ff; }
     .cal-day.today { background: #2563eb; color: #fff; font-weight: 600; }
     .cal-day.event { color: #2563eb; font-weight: 600; }
-    .cal-day.event::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; background: #2563eb; border-radius: 50%; }
-    .cal-day.today.event::after { background: #fff; }
     .cal-day.other { color: #e2e8f0; }
     .notif-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
     .notif-row { display: flex; align-items: flex-start; gap: 12px; padding: 13px 16px; border-bottom: 1px solid #f8fafc; }
@@ -235,370 +108,455 @@
     .dept-info span:last-child { color: #94a3b8; }
     .dept-bar-bg { background: #f0f4ff; border-radius: 4px; height: 5px; overflow: hidden; }
     .dept-bar { height: 100%; border-radius: 4px; }
-
-    /* FOOTER */
     .footer { text-align: center; padding: 20px; font-size: 11px; color: #cbd5e1; border-top: 1px solid #e2e8f0; background: #fff; margin-top: 8px; }
+    /* Agent welcome card */
+    .agent-welcome { background: linear-gradient(135deg, #1e3a5f, #2563eb); color: #fff; border-radius: 14px; padding: 28px 32px; margin-bottom: 24px; display: flex; align-items: center; gap: 24px; }
+    .agent-avatar-big { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 700; flex-shrink: 0; }
+    .agent-kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+    .agent-kpi { background: #fff; border-radius: 10px; padding: 18px 20px; border: 1px solid #e2e8f0; text-align: center; }
+    .agent-kpi-num { font-size: 2rem; font-weight: 700; color: #0f1c35; }
+    .agent-kpi-label { font-size: 11px; color: #94a3b8; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+    .demandes-table { background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; }
+    .demandes-table table { width: 100%; border-collapse: collapse; }
+    .demandes-table th { background: #f8fafc; padding: 10px 16px; font-size: 11px; color: #64748b; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
+    .demandes-table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #f8fafc; }
+    .demandes-table tr:last-child td { border-bottom: none; }
 </style>
 
-<!-- TOPBAR -->
-<div class="topbar">
-    <div class="tb-left">
-        <div class="tb-logo">
-            <svg viewBox="0 0 24 24" fill="none">
-                <path d="M3 21V10l9-7 9 7v11" stroke="white" stroke-width="1.6" stroke-linejoin="round" />
-                <path d="M9 21v-6h6v6" stroke="white" stroke-width="1.6" stroke-linejoin="round" />
-            </svg>
-        </div>
-        <span class="tb-name">Commune de Banikoara</span>
-        <div class="tb-sep"></div>
-        <span class="tb-app">Système RH</span>
-    </div>
-    <div class="tb-right">
-        <div class="tb-dot"></div>
-        <span class="tb-status">Opérationnel</span>
-        <div class="tb-user">AD</div>
-    </div>
-</div>
+@if (!estAuthentifie)
+{
+    <p>Chargement...</p>
+}
+else if (AuthState.EstAdmin)
+{
+    <!-- ═══════════════ VUE ADMINISTRATEUR ═══════════════ -->
 
-<!-- NAVBAR -->
-<nav class="navbar">
-    <a href="/" class="active">Tableau de bord</a>
-    <a href="/agents">Agents</a>
-    <a href="/conges">Congés</a>
-    <a href="/paie">Paie</a>
-    <a href="/evaluations">Évaluations</a>
-    <a href="/rapports">Rapports</a>
-    <div class="nav-end">
-        <button class="btn-new">+ Nouvel agent</button>
-    </div>
-</nav>
-
-<!-- HERO -->
-<div class="hero-wrap">
-    <div class="hero-bg"></div>
-    <div class="hero-overlay"></div>
-    <div class="hero-inner">
-        <div class="hero-left">
-            <div class="hero-eyebrow">
-                <span class="pulse"></span>
-                <span>Plateforme active — 2025</span>
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <div class="tb-left">
+            <div class="tb-logo">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M3 21V10l9-7 9 7v11" stroke="white" stroke-width="1.6" stroke-linejoin="round" />
+                    <path d="M9 21v-6h6v6" stroke="white" stroke-width="1.6" stroke-linejoin="round" />
+                </svg>
             </div>
-            <h1>Gestion du personnel<br /><em>de la Mairie de Banikoara</em></h1>
-            <p class="hero-desc">
-                Un système numérique centralisé pour administrer les ressources humaines
-                de la commune avec efficacité, transparence et rigueur institutionnelle.
-            </p>
-            <div class="hero-btns">
-                <button class="btn-hero-p" @onclick='() => NavigationManager.NavigateTo("/dashboard")'>
-                    Accéder au tableau de bord
-                </button>
-                <button class="btn-hero-g" @onclick='() => NavigationManager.NavigateTo("/docs")'>
-                    Voir la documentation
-                </button>
+            <span class="tb-name">Commune de Banikoara</span>
+            <div class="tb-sep"></div>
+            <span class="tb-app">Système RH</span>
+        </div>
+        <div class="tb-right">
+            <div class="tb-dot"></div>
+            <span class="tb-status">Opérationnel</span>
+        </div>
+    </div>
+
+    <!-- NAVBAR ADMIN -->
+    <nav class="navbar">
+        <a href="/" class="active">Tableau de bord</a>
+        <a href="/agents">Agents</a>
+        <a href="/conges">Congés</a>
+        <a href="/paie">Paie</a>
+        <a href="/evaluations">Évaluations</a>
+        <a href="/rapports">Rapports</a>
+        <a href="/utilisateurs">Utilisateurs</a>
+    </nav>
+
+    <!-- HERO -->
+    <div class="hero-wrap">
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-inner">
+            <div class="hero-left">
+                <div class="hero-eyebrow">
+                    <span class="pulse"></span>
+                    <span>Administration — @DateTime.Now.Year</span>
+                </div>
+                <h1>Gestion du personnel<br /><em>de la Mairie de Banikoara</em></h1>
+                <p class="hero-desc">
+                    Centralisez et administrez les ressources humaines de la commune
+                    avec efficacité, transparence et rigueur institutionnelle.
+                </p>
+                <div class="hero-btns">
+                    <button class="btn-hero-p" @onclick='() => NavigationManager.NavigateTo("/dashboard")'>
+                        Tableau de bord analytique
+                    </button>
+                    <button class="btn-hero-g" @onclick='() => NavigationManager.NavigateTo("/agents")'>
+                        Gérer les agents
+                    </button>
+                </div>
+            </div>
+            <div>
+                <div class="hero-card">
+                    <div class="hc-title">Vue d'ensemble — @moisCourant</div>
+                    <div class="hc-stats">
+                        <div class="hc-stat">
+                            <div class="hc-n">@totalAgents</div>
+                            <div class="hc-l">Total agents</div>
+                            <div class="hc-d up">✅ @agentsActifs actifs</div>
+                        </div>
+                        <div class="hc-stat">
+                            <div class="hc-n">@agentsConge</div>
+                            <div class="hc-l">En congé</div>
+                            <div class="hc-d warn">⏳ @congesEnAttente en attente</div>
+                        </div>
+                        <div class="hc-stat">
+                            <div class="hc-n">@masseSalarialeStr</div>
+                            <div class="hc-l">Masse sal. FCFA</div>
+                            <div class="hc-d neu">Mois en cours</div>
+                        </div>
+                        <div class="hc-stat">
+                            <div class="hc-n">@nbDepartements</div>
+                            <div class="hc-l">Départements</div>
+                            <div class="hc-d up">Bénin</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
+
+    <!-- KPI BAND -->
+    <div class="kpi-band">
+        <div class="kpi-item c1">
+            <div class="kpi-num">@totalAgents</div>
+            <div class="kpi-label">Total agents</div>
+            <div class="kpi-delta up">✅ @agentsActifs actifs</div>
+        </div>
+        <div class="kpi-item c2">
+            <div class="kpi-num">@agentsConge</div>
+            <div class="kpi-label">En congé</div>
+            <div class="kpi-delta warn">⏳ @congesEnAttente en attente</div>
+        </div>
+        <div class="kpi-item c3">
+            <div class="kpi-num">@nbDepartements</div>
+            <div class="kpi-label">Départements</div>
+            <div class="kpi-delta up">Bénin</div>
+        </div>
+        <div class="kpi-item c4">
+            <div class="kpi-num">@masseSalarialeStr</div>
+            <div class="kpi-label">Masse salariale (FCFA)</div>
+            <div class="kpi-delta neu">Mois en cours</div>
+        </div>
+    </div>
+
+    <!-- MAIN GRID ADMIN -->
+    <div class="main-grid">
         <div>
-            <div class="hero-card">
-                <div class="hc-title">Vue d'ensemble — @moisCourant</div>
-                <div class="hc-stats">
-                    <div class="hc-stat">
-                        <div class="hc-n">@agentsActifs</div>
-                        <div class="hc-l">Agents actifs</div>
-                        <div class="hc-d up">+3 ce mois</div>
+            <div class="section-title">Modules du système</div>
+            <div class="modules-grid">
+                <a href="/agents" class="module-card">
+                    <div class="module-icon" style="background:#eff6ff">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4" stroke="#2563eb" stroke-width="1.5"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="#2563eb" stroke-width="1.5"/></svg>
                     </div>
-                    <div class="hc-stat">
-                        <div class="hc-n">@agentsConge</div>
-                        <div class="hc-l">En congé</div>
-                        <div class="hc-d warn">@congesEnAttente en attente</div>
+                    <div class="module-name">Gestion des agents</div>
+                    <div class="module-desc">Dossiers, profils, affectations par département</div>
+                    <span class="badge-module" style="background:#eff6ff;color:#1d4ed8">@totalAgents agents</span>
+                </a>
+                <a href="/conges" class="module-card">
+                    <div class="module-icon" style="background:#fffbeb">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#f59e0b" stroke-width="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/></svg>
                     </div>
-                    <div class="hc-stat">
-                        <div class="hc-n">@masseSalariale</div>
-                        <div class="hc-l">Masse sal. FCFA</div>
-                        <div class="hc-d neu">Mois en cours</div>
+                    <div class="module-name">Congés &amp; absences</div>
+                    <div class="module-desc">Demandes, validation hiérarchique, soldes</div>
+                    <span class="badge-module" style="background:#fffbeb;color:#b45309">@congesEnAttente en attente</span>
+                </a>
+                <a href="/paie" class="module-card">
+                    <div class="module-icon" style="background:#ecfdf5">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#10b981" stroke-width="1.5"/><line x1="12" y1="12" x2="12" y2="16" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="14" x2="14" y2="14" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/></svg>
                     </div>
-                    <div class="hc-stat">
-                        <div class="hc-n">@nbDepartements</div>
-                        <div class="hc-l">Départements</div>
-                        <div class="hc-d up">Tous actifs</div>
+                    <div class="module-name">Fiches de paie</div>
+                    <div class="module-desc">Bulletins mensuels, indemnités, primes</div>
+                    <span class="badge-module" style="background:#ecfdf5;color:#065f46">Module actif</span>
+                </a>
+                <a href="/rapports" class="module-card">
+                    <div class="module-icon" style="background:#f5f3ff">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round"/></svg>
                     </div>
-                </div>
+                    <div class="module-name">Rapports &amp; statistiques</div>
+                    <div class="module-desc">Analyses RH, exports, tableaux de bord</div>
+                    <span class="badge-module" style="background:#f5f3ff;color:#6d28d9">Actif</span>
+                </a>
+                <a href="/evaluations" class="module-card">
+                    <div class="module-icon" style="background:#fff1f2">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" stroke="#f43f5e" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="module-name">Évaluations</div>
+                    <div class="module-desc">Notation annuelle, avancements, promotions</div>
+                    <span class="badge-module" style="background:#fff1f2;color:#be123c">Actif</span>
+                </a>
+                <a href="/utilisateurs" class="module-card">
+                    <div class="module-icon" style="background:#fef2f2">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#dc2626" stroke-width="1.5"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#dc2626" stroke-width="1.5"/></svg>
+                    </div>
+                    <div class="module-name">Utilisateurs</div>
+                    <div class="module-desc">Comptes, rôles et accès au système</div>
+                    <span class="badge-module" style="background:#fef2f2;color:#991b1b">Admin</span>
+                </a>
             </div>
-        </div>
-    </div>
-</div>
 
-<!-- KPI BAND -->
-<div class="kpi-band">
-    <div class="kpi-item c1">
-        <div class="kpi-num">@agentsActifs</div>
-        <div class="kpi-label">Agents actifs</div>
-        <div class="kpi-delta up">↑ +3 ce mois</div>
-    </div>
-    <div class="kpi-item c2">
-        <div class="kpi-num">@agentsConge</div>
-        <div class="kpi-label">En congé</div>
-        <div class="kpi-delta warn">@congesEnAttente en attente</div>
-    </div>
-    <div class="kpi-item c3">
-        <div class="kpi-num">@nbDepartements</div>
-        <div class="kpi-label">Départements</div>
-        <div class="kpi-delta up">Tous actifs</div>
-    </div>
-    <div class="kpi-item c4">
-        <div class="kpi-num">@masseSalariale</div>
-        <div class="kpi-label">Masse salariale (FCFA)</div>
-        <div class="kpi-delta neu">Mois en cours</div>
-    </div>
-</div>
-
-<!-- MAIN -->
-<div class="main-grid">
-    <div>
-        <div class="section-title">Modules du système</div>
-        <div class="modules-grid">
-            <a href="/agents" class="module-card">
-                <div class="module-icon" style="background:#eff6ff">
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                        <circle cx="9" cy="7" r="4" stroke="#2563eb" stroke-width="1.5"/>
-                        <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="#2563eb" stroke-width="1.5"/>
-                        <path d="M16 11l2 2 4-4" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg>
+            <!-- Derniers agents -->
+            <div class="section-title">Derniers agents enregistrés</div>
+            <div class="activity-card">
+                <div class="card-header">
+                    <span>Agents récents</span>
+                    <a href="/agents">Voir tous →</a>
                 </div>
-                <div class="module-name">Gestion des agents</div>
-                <div class="module-desc">Dossiers, profils, affectations par département</div>
-                <span class="badge" style="background:#eff6ff;color:#1d4ed8">@agentsActifs agents</span>
-            </a>
-            <a href="/conges" class="module-card">
-                <div class="module-icon" style="background:#fffbeb">
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="#f59e0b" stroke-width="1.5"/>
-                        <path d="M16 2v4M8 2v4M3 10h18" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg>
-                </div>
-                <div class="module-name">Congés &amp; absences</div>
-                <div class="module-desc">Demandes, validation hiérarchique, soldes</div>
-                <span class="badge" style="background:#fffbeb;color:#b45309">@congesEnAttente en attente</span>
-            </a>
-            <a href="/paie" class="module-card">
-                <div class="module-icon" style="background:#ecfdf5">
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                        <rect x="2" y="7" width="20" height="14" rx="2" stroke="#10b981" stroke-width="1.5"/>
-                        <path d="M16 7V5a2 2 0 0 0-4 0v2" stroke="#10b981" stroke-width="1.5"/>
-                        <line x1="12" y1="12" x2="12" y2="16" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/>
-                        <line x1="10" y1="14" x2="14" y2="14" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg>
-                </div>
-                <div class="module-name">Fiches de paie</div>
-                <div class="module-desc">Bulletins mensuels, indemnités, primes</div>
-                <span class="badge" style="background:#ecfdf5;color:#065f46">À jour</span>
-            </a>
-            <a href="/rapports" class="module-card">
-                <div class="module-icon" style="background:#f5f3ff">
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                        <path d="M18 20V10M12 20V4M6 20v-6" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg>
-                </div>
-                <div class="module-name">Rapports &amp; statistiques</div>
-                <div class="module-desc">Analyses RH, exports, tableaux de bord</div>
-                <span class="badge" style="background:#f5f3ff;color:#6d28d9">Nouveau</span>
-            </a>
-            <a href="/evaluations" class="module-card">
-                <div class="module-icon" style="background:#fff1f2">
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                        <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" stroke="#f43f5e" stroke-width="1.5" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-                <div class="module-name">Évaluations</div>
-                <div class="module-desc">Notation annuelle, avancements, promotions</div>
-                <span class="badge" style="background:#fff1f2;color:#be123c">En cours</span>
-            </a>
-            <a href="/historique" class="module-card">
-                <div class="module-icon" style="background:#f0f9ff">
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="9" stroke="#0ea5e9" stroke-width="1.5"/>
-                        <path d="M12 6v6l4 2" stroke="#0ea5e9" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg>
-                </div>
-                <div class="module-name">Historique &amp; archives</div>
-                <div class="module-desc">Journal d'activité, traçabilité complète</div>
-                <span class="badge" style="background:#f0f9ff;color:#0369a1">Complet</span>
-            </a>
-        </div>
-
-        <div class="section-title">Activité récente</div>
-        <div class="activity-card">
-            <div class="card-header">
-                <span>Dernières opérations</span>
-                <a href="/historique">Voir tout &rarr;</a>
-            </div>
-            @foreach (var item in activitesRecentes)
-            {
-                <div class="activity-row">
-                    <div class="avatar" style="background:@item.AvatarBg;color:@item.AvatarColor">@item.Initiales</div>
-                    <div class="activity-info">
-                        <div class="activity-name">@item.Nom</div>
-                        <div class="activity-detail">@item.Detail</div>
-                    </div>
-                    <div>
-                        <span class="status-pill" style="background:@item.StatutBg;color:@item.StatutColor">@item.Statut</span>
-                        <div class="activity-time">@item.Temps</div>
-                    </div>
-                </div>
-            }
-        </div>
-    </div>
-
-    <div>
-        <div class="section-title">Calendrier — @moisCourant</div>
-        <div class="calendar-card">
-            <div class="cal-header">
-                <span class="cal-month">@moisCourant</span>
-                <div class="cal-nav"><span>&#8249;</span><span>&#8250;</span></div>
-            </div>
-            <div class="cal-grid">
-                <div class="cal-day-header">Lu</div>
-                <div class="cal-day-header">Ma</div>
-                <div class="cal-day-header">Me</div>
-                <div class="cal-day-header">Je</div>
-                <div class="cal-day-header">Ve</div>
-                <div class="cal-day-header">Sa</div>
-                <div class="cal-day-header">Di</div>
-                @for (int i = 0; i < debutMois; i++)
+                @foreach (var agent in derniersAgents)
                 {
-                    <div class="cal-day other">@(joursDernierMois - debutMois + 1 + i)</div>
+                    <div class="activity-row">
+                        <div class="avatar" style="background:#eff6ff;color:#2563eb">@agent.Initiales</div>
+                        <div class="activity-info">
+                            <div class="activity-name">@agent.NomComplet</div>
+                            <div class="activity-detail">@(agent.Poste?.NomPoste ?? "-") — @(agent.Service?.NomService ?? "-")</div>
+                        </div>
+                        <div>
+                            <span class="status-pill" style="background:@(agent.Statut=="Actif"?"#ecfdf5":"#fffbeb");color:@(agent.Statut=="Actif"?"#065f46":"#b45309")">
+                                @agent.Statut
+                            </span>
+                            <div class="activity-time">@agent.DateEmbauche.ToShortDateString()</div>
+                        </div>
+                    </div>
                 }
-                @for (int j = 1; j <= joursInMois; j++)
+                @if (!derniersAgents.Any())
                 {
-                    var cls = "cal-day";
-                    if (j == today.Day) cls += " today";
-                    if (joursEvenements.Contains(j)) cls += " event";
-                    <div class="@cls">@j</div>
-                }
-                @for (int k = 1; k <= cellulesFin; k++)
-                {
-                    <div class="cal-day other">@k</div>
+                    <div class="activity-row"><div class="activity-detail text-muted">Aucun agent enregistré.</div></div>
                 }
             </div>
         </div>
 
-        <div class="section-title">Notifications</div>
-        <div class="notif-card">
-            @foreach (var notif in notifications)
-            {
-                <div class="notif-row">
-                    <div class="notif-dot" style="background:@notif.Couleur"></div>
-                    <div>
-                        <div class="notif-msg">@notif.Message</div>
-                        <div class="notif-time">@notif.Temps</div>
-                    </div>
+        <!-- SIDE -->
+        <div>
+            <div class="section-title">Calendrier — @moisCourant</div>
+            <div class="calendar-card">
+                <div class="cal-header"><span class="cal-month">@moisCourant</span></div>
+                <div class="cal-grid">
+                    @foreach (var d in new[]{"Lu","Ma","Me","Je","Ve","Sa","Di"})
+                    { <div class="cal-day-header">@d</div> }
+                    @for (int i = 0; i < debutMois; i++)
+                    { <div class="cal-day other">@(joursDernierMois - debutMois + 1 + i)</div> }
+                    @for (int j = 1; j <= joursInMois; j++)
+                    {
+                        var cls = "cal-day" + (j == today.Day ? " today" : "");
+                        <div class="@cls">@j</div>
+                    }
+                    @for (int k = 1; k <= cellulesFin; k++)
+                    { <div class="cal-day other">@k</div> }
                 </div>
-            }
-        </div>
+            </div>
 
-        <div class="section-title">Répartition par département</div>
-        <div class="dept-card">
-            @foreach (var dept in departements)
-            {
-                <div class="dept-row">
-                    <div class="dept-info">
-                        <span>@dept.Nom</span>
-                        <span>@dept.NbAgents agents</span>
+            <div class="section-title">Répartition par département</div>
+            <div class="dept-card">
+                @foreach (var dept in departements)
+                {
+                    <div class="dept-row">
+                        <div class="dept-info">
+                            <span>@dept.Nom</span>
+                            <span>@dept.NbAgents agents</span>
+                        </div>
+                        <div class="dept-bar-bg">
+                            <div class="dept-bar" style="width:@dept.Pourcent%;background:@dept.Couleur"></div>
+                        </div>
                     </div>
-                    <div class="dept-bar-bg">
-                        <div class="dept-bar" style="width:@dept.Pourcent%;background:@dept.Couleur"></div>
-                    </div>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
-</div>
+}
+else
+{
+    <!-- ═══════════════ VUE AGENT ═══════════════ -->
+    <div class="main-grid" style="max-width:900px;margin:32px auto;grid-template-columns:1fr;">
+        <div>
+            <!-- Carte de bienvenue agent -->
+            <div class="agent-welcome">
+                <div class="agent-avatar-big">@(monAgent?.Initiales ?? "?")</div>
+                <div>
+                    <div style="font-size:0.8rem;opacity:0.7;text-transform:uppercase;letter-spacing:.8px;">Bienvenue</div>
+                    <div style="font-size:1.5rem;font-weight:700;margin:4px 0;">@(monAgent?.NomComplet ?? AuthState.NomComplet)</div>
+                    <div style="font-size:0.85rem;opacity:0.8;">
+                        💼 @(monAgent?.Poste?.NomPoste ?? "-") &nbsp;|&nbsp;
+                        🏢 @(monAgent?.Service?.NomService ?? "-") &nbsp;|&nbsp;
+                        🗺️ @(monAgent?.Departement ?? "-")
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPIs agent -->
+            <div class="agent-kpi-row">
+                <div class="agent-kpi">
+                    <div class="agent-kpi-num">@mesDemandes.Count</div>
+                    <div class="agent-kpi-label">Demandes de congé</div>
+                </div>
+                <div class="agent-kpi">
+                    <div class="agent-kpi-num" style="color:#f59e0b">@mesDemandes.Count(d => d.Statut == "attente")</div>
+                    <div class="agent-kpi-label">En attente</div>
+                </div>
+                <div class="agent-kpi">
+                    <div class="agent-kpi-num" style="color:#10b981">@mesDemandes.Count(d => d.Statut == "approuve")</div>
+                    <div class="agent-kpi-label">Approuvées</div>
+                </div>
+            </div>
+
+            <!-- Accès rapides -->
+            <div class="section-title">Mes accès rapides</div>
+            <div class="modules-grid" style="grid-template-columns: repeat(3,1fr); margin-bottom:24px;">
+                <a href="/conges" class="module-card">
+                    <div class="module-icon" style="background:#fffbeb">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#f59e0b" stroke-width="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </div>
+                    <div class="module-name">Mes congés</div>
+                    <div class="module-desc">Voir et soumettre des demandes de congé</div>
+                    <span class="badge-module" style="background:#fffbeb;color:#b45309">@mesDemandes.Count(d=>d.Statut=="attente") en attente</span>
+                </a>
+                <a href="/paie" class="module-card">
+                    <div class="module-icon" style="background:#ecfdf5">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#10b981" stroke-width="1.5"/><line x1="12" y1="12" x2="12" y2="16" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="14" x2="14" y2="14" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </div>
+                    <div class="module-name">Mes bulletins de paie</div>
+                    <div class="module-desc">Consulter mes fiches de paie mensuelles</div>
+                    <span class="badge-module" style="background:#ecfdf5;color:#065f46">Disponibles</span>
+                </a>
+                <a href="/evaluations" class="module-card">
+                    <div class="module-icon" style="background:#fff1f2">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" stroke="#f43f5e" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="module-name">Mes évaluations</div>
+                    <div class="module-desc">Consulter mes évaluations annuelles</div>
+                    <span class="badge-module" style="background:#fff1f2;color:#be123c">À jour</span>
+                </a>
+                <a href="/profil" class="module-card">
+                    <div class="module-icon" style="background:#f0f9ff">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#0ea5e9" stroke-width="1.5"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#0ea5e9" stroke-width="1.5"/></svg>
+                    </div>
+                    <div class="module-name">Mon profil</div>
+                    <div class="module-desc">Informations personnelles et mot de passe</div>
+                    <span class="badge-module" style="background:#f0f9ff;color:#0369a1">Profil</span>
+                </a>
+                <a href="/dashboard" class="module-card">
+                    <div class="module-icon" style="background:#f5f3ff">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </div>
+                    <div class="module-name">Tableau de bord</div>
+                    <div class="module-desc">Statistiques et graphiques du personnel</div>
+                    <span class="badge-module" style="background:#f5f3ff;color:#6d28d9">Stats</span>
+                </a>
+            </div>
+
+            <!-- Mes dernières demandes -->
+            <div class="section-title">Mes dernières demandes de congé</div>
+            <div class="demandes-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date demande</th>
+                            <th>Motif</th>
+                            <th>Statut</th>
+                            <th>Période accordée</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in mesDemandes.Take(5))
+                        {
+                            <tr>
+                                <td>@d.DateDemande.ToShortDateString()</td>
+                                <td>@(d.Commentaire ?? "-")</td>
+                                <td>
+                                    <span class="status-pill" style="background:@GetBg(d.Statut);color:@GetFg(d.Statut)">
+                                        @GetLabel(d.Statut)
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (d.Conge != null)
+                                    {
+                                        @($"{d.Conge.DateDebut:dd/MM/yy} → {d.Conge.DateFin:dd/MM/yy} ({d.Conge.Duree}j)")
+                                    }
+                                    else { <span class="text-muted">-</span> }
+                                </td>
+                            </tr>
+                        }
+                        @if (!mesDemandes.Any())
+                        {
+                            <tr><td colspan="4" class="text-center text-muted py-3">Aucune demande.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
 
 <footer class="footer">
-    Mairie de Banikoara &nbsp;&middot;&nbsp; Système de Gestion du Personnel
-    &nbsp;&middot;&nbsp; Version 1.0 &nbsp;&middot;&nbsp; 2025
+    Mairie de Banikoara &nbsp;·&nbsp; Système de Gestion du Personnel &nbsp;·&nbsp; @DateTime.Now.Year
 </footer>
 
 @code {
     private bool estAuthentifie = false;
+    private Agent? monAgent;
+    private List<DemandeConge> mesDemandes = new();
+
+    // Stats admin
+    private int totalAgents;
+    private int agentsActifs;
+    private int agentsConge;
+    private int congesEnAttente;
+    private int nbDepartements;
+    private string masseSalarialeStr = "0";
+    private List<Agent> derniersAgents = new();
+
+    // Calendrier
+    private DateTime today = DateTime.Today;
+    private string moisCourant = "";
+    private int debutMois, joursInMois, joursDernierMois, cellulesFin;
+
+    private record Dept(string Nom, int Pourcent, int NbAgents, string Couleur);
+    private List<Dept> departements = new();
 
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
         estAuthentifie = state.User.Identity?.IsAuthenticated ?? false;
-        if (!estAuthentifie)
-            NavigationManager.NavigateTo("/login");
+        if (!estAuthentifie) { NavigationManager.NavigateTo("/login"); return; }
+
+        // Calendrier
+        var culture = new System.Globalization.CultureInfo("fr-FR");
+        moisCourant = today.ToString("MMMM yyyy", culture);
+        moisCourant = char.ToUpper(moisCourant[0]) + moisCourant[1..];
+        var premierJour = new DateTime(today.Year, today.Month, 1);
+        debutMois = ((int)premierJour.DayOfWeek + 6) % 7;
+        joursInMois = DateTime.DaysInMonth(today.Year, today.Month);
+        joursDernierMois = DateTime.DaysInMonth(today.Month == 1 ? today.Year - 1 : today.Year, today.Month == 1 ? 12 : today.Month - 1);
+        int total = debutMois + joursInMois;
+        cellulesFin = total % 7 == 0 ? 0 : 7 - (total % 7);
+
+        if (AuthState.EstAdmin)
+        {
+            // Données réelles pour l'admin
+            var agents = AgentService.GetAll();
+            totalAgents = agents.Count;
+            agentsActifs = agents.Count(a => a.Statut == "Actif");
+            agentsConge = agents.Count(a => a.Statut == "En congé");
+            nbDepartements = agents.Select(a => a.Departement).Distinct().Count();
+            var masse = agents.Sum(a => a.Salaire);
+            masseSalarialeStr = masse >= 1_000_000 ? $"{masse / 1_000_000:F1}M" : masse.ToString("N0");
+            derniersAgents = agents.OrderByDescending(a => a.DateEmbauche).Take(5).ToList();
+            congesEnAttente = CongeService.GetAllDemandes().Count(d => d.Statut == "attente");
+
+            var groupes = agents.GroupBy(a => a.Departement)
+                .OrderByDescending(g => g.Count()).Take(5).ToList();
+            int max = groupes.Any() ? groupes.Max(g => g.Count()) : 1;
+            var couleurs = new[] { "#2563eb","#10b981","#f59e0b","#8b5cf6","#f43f5e" };
+            departements = groupes.Select((g, i) => new Dept(
+                g.Key, (int)((double)g.Count() / max * 100), g.Count(), couleurs[i % couleurs.Length]
+            )).ToList();
+        }
+        else if (AuthState.AgentId.HasValue)
+        {
+            monAgent = AgentService.GetById(AuthState.AgentId.Value);
+            mesDemandes = CongeService.GetDemandesByAgent(AuthState.AgentId.Value);
+        }
     }
 
-    private int    agentsActifs    = 142;
-    private int    agentsConge     = 18;
-    private int    congesEnAttente = 5;
-    private int    nbDepartements  = 9;
-    private string masseSalariale  = "85 M";
-
-    private record Activite(
-        string Initiales, string AvatarBg, string AvatarColor,
-        string Nom, string Detail,
-        string Statut, string StatutBg, string StatutColor,
-        string Temps);
-
-    private List<Activite> activitesRecentes = new()
-    {
-        new("AK","#eff6ff","#2563eb","Amadou Kossou",
-            "Demande de congé soumise — Direction des Finances",
-            "En attente","#fffbeb","#b45309","Il y a 2h"),
-        new("FB","#ecfdf5","#10b981","Fatoumata Boni",
-            "Dossier mis à jour — Direction des Travaux Publics",
-            "Validé","#ecfdf5","#065f46","Il y a 4h"),
-        new("MT","#f5f3ff","#8b5cf6","Moussa Tamou",
-            "Fiche de paie générée — Janvier 2025",
-            "Généré","#eff6ff","#1d4ed8","Hier"),
-        new("SD","#fff1f2","#f43f5e","Salimatou Daki",
-            "Nouvel agent enregistré — Service de la Santé",
-            "Actif","#ecfdf5","#065f46","Hier"),
-    };
-
-    private DateTime     today            = DateTime.Today;
-    private string       moisCourant      = "";
-    private int          debutMois        = 0;
-    private int          joursInMois      = 0;
-    private int          joursDernierMois = 0;
-    private int          cellulesFin      = 0;
-    private HashSet<int> joursEvenements  = new() { 5, 7, 14, 20, 28 };
-
-    protected override void OnInitialized()
-    {
-        var culture      = new System.Globalization.CultureInfo("fr-FR");
-        moisCourant      = today.ToString("MMMM yyyy", culture);
-        moisCourant      = char.ToUpper(moisCourant[0]) + moisCourant[1..];
-        var premierJour  = new DateTime(today.Year, today.Month, 1);
-        debutMois        = ((int)premierJour.DayOfWeek + 6) % 7;
-        joursInMois      = DateTime.DaysInMonth(today.Year, today.Month);
-        joursDernierMois = DateTime.DaysInMonth(
-                               today.Month == 1 ? today.Year - 1 : today.Year,
-                               today.Month == 1 ? 12 : today.Month - 1);
-        int total        = debutMois + joursInMois;
-        cellulesFin      = total % 7 == 0 ? 0 : 7 - (total % 7);
-    }
-
-    private record Notification(string Couleur, string Message, string Temps);
-
-    private List<Notification> notifications = new()
-    {
-        new("#f59e0b", "5 demandes de congé en attente de validation", "Aujourd'hui"),
-        new("#2563eb", "Génération des fiches de paie — Février 2025",  "Il y a 1 jour"),
-        new("#10b981", "3 nouveaux agents inscrits ce mois",            "Il y a 2 jours"),
-        new("#f43f5e", "Rapport mensuel disponible en téléchargement",  "Il y a 3 jours"),
-    };
-
-    private record Departement(string Nom, int Pourcent, int NbAgents, string Couleur);
-
-    private List<Departement> departements = new()
-    {
-        new("Administration", 72, 40, "#2563eb"),
-        new("Finances",       46, 26, "#10b981"),
-        new("Travaux Publics",36, 20, "#f59e0b"),
-        new("Santé",          30, 17, "#8b5cf6"),
-        new("Éducation",      25, 14, "#f43f5e"),
-        new("Autres",         45, 25, "#94a3b8"),
-    };
+    private string GetBg(string s) => s switch { "approuve" => "#ecfdf5", "refuse" => "#fef2f2", _ => "#fffbeb" };
+    private string GetFg(string s) => s switch { "approuve" => "#065f46", "refuse" => "#991b1b", _ => "#b45309" };
+    private string GetLabel(string s) => s switch { "approuve" => "✅ Approuvé", "refuse" => "❌ Refusé", _ => "⏳ En attente" };
 }

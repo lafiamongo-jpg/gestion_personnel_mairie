@@ -1,0 +1,15 @@
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@inject GestionPersonnelMairie.Services.CustomAuthStateProvider CustomAuth
+
+<button class="btn btn-sm btn-outline-danger ms-3" @onclick="SeDeconnecter">
+    🚪 Déconnexion
+</button>
+
+@code {
+    private async Task SeDeconnecter()
+    {
+        await CustomAuth.LogoutAsync();
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
+}

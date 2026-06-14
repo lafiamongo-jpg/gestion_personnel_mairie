@@ -1,0 +1,299 @@
+@page "/agents"
+@rendermode InteractiveServer
+@using GestionPersonnelMairie.Models
+@using GestionPersonnelMairie.Services
+@inject AgentService AgentService
+
+<PageTitle>Gestion des Agents</PageTitle>
+
+<!-- Popup de succès -->
+@if (showSucces)
+{
+    <div style="position:fixed; top:20px; right:20px; z-index:9999;">
+        <div class="alert alert-success alert-dismissible shadow" style="min-width:300px;">
+            <strong>✅ Succès !</strong> @succesMessage
+            <button type="button" class="btn-close" @onclick="() => showSucces = false"></button>
+        </div>
+    </div>
+}
+
+<div class="container-fluid py-4">
+
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>👥 Gestion des Agents</h2>
+        <button class="btn btn-primary" @onclick="() => OuvrirModal()">
+            ➕ Ajouter un agent
+        </button>
+    </div>
+
+    <!-- Filtres -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="🔍 Rechercher par nom ou email..."
+                   @bind="recherche" @bind:event="oninput" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="statutFiltre">
+                <option value="">Tous les statuts</option>
+                <option value="Actif">Actif</option>
+                <option value="En congé">En congé</option>
+                <option value="En mission">En mission</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Tableau -->
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nom complet</th>
+                    <th>Email</th>
+                    <th>Téléphone</th>
+                    <th>Département</th>
+                    <th>Statut</th>
+                    <th>Date embauche</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!agentsFiltres.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">Aucun agent trouvé.</td>
+                    </tr>
+                }
+                @foreach (var agent in agentsFiltres)
+                {
+                    <tr>
+                        <td>@agent.NomComplet</td>
+                        <td>@agent.Email</td>
+                        <td>@agent.Telephone</td>
+                        <td>@agent.Departement</td>
+                        <td>
+                            <span class="badge @GetBadgeClass(agent.Statut)">@agent.Statut</span>
+                        </td>
+                        <td>@agent.DateEmbauche.ToShortDateString()</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning me-1" @onclick="() => OuvrirModal(agent)">✏️</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => Supprimer(agent.Id)">🗑️</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Ajouter / Modifier -->
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(agentEdite.Id == 0 ? "Ajouter un agent" : "Modifier l'agent")</h5>
+                    <button type="button" class="btn-close" @onclick="FermerModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nom</label>
+                            <input class="form-control" @bind="agentEdite.Nom" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Prénom</label>
+                            <input class="form-control" @bind="agentEdite.Prenom" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" @bind="agentEdite.Email" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Téléphone</label>
+                            <input class="form-control" @bind="agentEdite.Telephone" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Département</label>
+                            <select class="form-select" @bind="agentEdite.Departement">
+                                <option value="">-- Choisir un département --</option>
+                                <option value="Alibori">Alibori</option>
+                                <option value="Atacora">Atacora</option>
+                                <option value="Atlantique">Atlantique</option>
+                                <option value="Borgou">Borgou</option>
+                                <option value="Collines">Collines</option>
+                                <option value="Couffo">Couffo</option>
+                                <option value="Donga">Donga</option>
+                                <option value="Littoral">Littoral</option>
+                                <option value="Mono">Mono</option>
+                                <option value="Ouémé">Ouémé</option>
+                                <option value="Plateau">Plateau</option>
+                                <option value="Zou">Zou</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Statut</label>
+                            <select class="form-select" @bind="agentEdite.Statut">
+                                <option value="Actif">Actif</option>
+                                <option value="En congé">En congé</option>
+                                <option value="En mission">En mission</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Date d'embauche</label>
+                            <input type="date" class="form-control" @bind="agentEdite.DateEmbauche" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Salaire</label>
+                            <input type="number" class="form-control" @bind="agentEdite.Salaire" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Service</label>
+                            <select class="form-select" @bind="agentEdite.IdService">
+                                <option value="0">-- Choisir --</option>
+                                @foreach (var s in services)
+                                {
+                                    <option value="@s.IdService">@s.NomService</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Poste</label>
+                            <select class="form-select" @bind="agentEdite.IdPoste">
+                                <option value="0">-- Choisir --</option>
+                                @foreach (var p in postes)
+                                {
+                                    <option value="@p.IdPoste">@p.NomPoste</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    @if (erreurMessage != null)
+                    {
+                        <div class="alert alert-danger mt-3">@erreurMessage</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="FermerModal">Annuler</button>
+                    <button class="btn btn-primary" @onclick="Sauvegarder">💾 Sauvegarder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Agent> agents = new();
+    private List<Service> services = new();
+    private List<Poste> postes = new();
+    private string recherche = "";
+    private string statutFiltre = "";
+    private bool showModal = false;
+    private bool showSucces = false;
+    private string succesMessage = "";
+    private Agent agentEdite = new();
+    private string? erreurMessage = null;
+
+    private List<Agent> agentsFiltres => agents
+        .Where(a =>
+            (string.IsNullOrEmpty(recherche) ||
+             a.NomComplet.Contains(recherche, StringComparison.OrdinalIgnoreCase) ||
+             a.Email.Contains(recherche, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(statutFiltre) || a.Statut == statutFiltre))
+        .ToList();
+
+    protected override void OnInitialized()
+    {
+        agents = AgentService.GetAll();
+        services = AgentService.GetServices();
+        postes = AgentService.GetPostes();
+    }
+
+    private void OuvrirModal(Agent? agent = null)
+    {
+        erreurMessage = null;
+        agentEdite = agent != null
+            ? new Agent {
+                Id = agent.Id, Nom = agent.Nom, Prenom = agent.Prenom,
+                Email = agent.Email, Telephone = agent.Telephone,
+                Departement = agent.Departement, Statut = agent.Statut,
+                DateEmbauche = agent.DateEmbauche, Salaire = agent.Salaire,
+                IdService = agent.IdService, IdPoste = agent.IdPoste
+              }
+            : new Agent { DateEmbauche = DateTime.Today };
+        showModal = true;
+    }
+
+    private void FermerModal()
+    {
+        showModal = false;
+        erreurMessage = null;
+    }
+
+    private async void Sauvegarder()
+    {
+        if (string.IsNullOrEmpty(agentEdite.Nom) || string.IsNullOrEmpty(agentEdite.Prenom))
+        {
+            erreurMessage = "Le nom et le prénom sont obligatoires.";
+            return;
+        }
+        if (string.IsNullOrEmpty(agentEdite.Departement))
+        {
+            erreurMessage = "Veuillez choisir un département.";
+            return;
+        }
+        if (agentEdite.IdService == 0 || agentEdite.IdPoste == 0)
+        {
+            erreurMessage = "Veuillez choisir un service et un poste.";
+            return;
+        }
+
+        erreurMessage = null;
+        bool estNouvel = agentEdite.Id == 0;
+
+        if (estNouvel)
+            AgentService.Add(agentEdite);
+        else
+            AgentService.Update(agentEdite);
+
+        agents = AgentService.GetAll();
+        showModal = false;
+
+        // Afficher popup succès
+        succesMessage = estNouvel
+            ? $"Agent {agentEdite.Prenom} {agentEdite.Nom} ajouté avec succès !"
+            : $"Agent {agentEdite.Prenom} {agentEdite.Nom} modifié avec succès !";
+        showSucces = true;
+        StateHasChanged();
+
+        // Masquer automatiquement après 3 secondes
+        await Task.Delay(3000);
+        showSucces = false;
+        StateHasChanged();
+    }
+
+    private async void Supprimer(int id)
+    {
+        var agent = agents.FirstOrDefault(a => a.Id == id);
+        AgentService.Delete(id);
+        agents = AgentService.GetAll();
+
+        succesMessage = $"Agent supprimé avec succès !";
+        showSucces = true;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+        showSucces = false;
+        StateHasChanged();
+    }
+
+    private string GetBadgeClass(string statut) => statut switch
+    {
+        "Actif" => "badge-green",
+        "En congé" => "badge-amber",
+        "En mission" => "badge-blue",
+        _ => "badge-gray"
+    };
+}

@@ -1,0 +1,339 @@
+@page "/conges"
+@rendermode InteractiveServer
+@using GestionPersonnelMairie.Models
+@using GestionPersonnelMairie.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject CongeService CongeService
+@inject AgentService AgentService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Gestion des Congés</PageTitle>
+
+<div class="container-fluid py-4">
+
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🏖️ Gestion des Congés</h2>
+        <button class="btn btn-primary" @onclick="OuvrirModalDemande">
+            ➕ Nouvelle demande
+        </button>
+    </div>
+
+    <!-- Onglets -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <button class="nav-link @(ongletActif == "toutes" ? "active" : "")"
+                    @onclick='() => ongletActif = "toutes"'>
+                📋 Toutes les demandes
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(ongletActif == "attente" ? "active" : "")"
+                    @onclick='() => ongletActif = "attente"'>
+                ⏳ En attente
+                @if (demandesEnAttente.Any())
+                {
+                    <span class="badge bg-warning ms-1">@demandesEnAttente.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(ongletActif == "approuve" ? "active" : "")"
+                    @onclick='() => ongletActif = "approuve"'>
+                ✅ Approuvées
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(ongletActif == "refuse" ? "active" : "")"
+                    @onclick='() => ongletActif = "refuse"'>
+                ❌ Refusées
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tableau -->
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Agent</th>
+                    <th>Date demande</th>
+                    <th>Commentaire</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!demandesFiltrees.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">Aucune demande trouvée.</td>
+                    </tr>
+                }
+                @foreach (var demande in demandesFiltrees)
+                {
+                    <tr>
+                        <td>
+                            <div style="font-weight:600">@demande.Agent?.NomComplet</div>
+                            <div style="font-size:0.78rem;color:#6c757d">@demande.Agent?.Email</div>
+                        </td>
+                        <td>@demande.DateDemande.ToShortDateString()</td>
+                        <td>@(demande.Commentaire ?? "-")</td>
+                        <td>
+                            <span class="badge @GetBadgeClass(demande.Statut)">
+                                @GetStatutLabel(demande.Statut)
+                            </span>
+                        </td>
+                        <td>
+                            @if (demande.Statut == "attente")
+                            {
+                                <button class="btn btn-sm btn-success me-1"
+                                        @onclick="() => OuvrirModalApprouver(demande)">
+                                    ✅ Approuver
+                                </button>
+                                <button class="btn btn-sm btn-danger"
+                                        @onclick="() => OuvrirModalRefuser(demande)">
+                                    ❌ Refuser
+                                </button>
+                            }
+                            else if (demande.Conge != null)
+                            {
+                                <span class="text-muted" style="font-size:0.82rem">
+                                    📅 @demande.Conge.DateDebut.ToShortDateString()
+                                    → @demande.Conge.DateFin.ToShortDateString()
+                                    (@demande.Conge.Duree jours)
+                                </span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Nouvelle Demande -->
+@if (showModalDemande)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">➕ Nouvelle demande de congé</h5>
+                    <button type="button" class="btn-close" @onclick="() => showModalDemande = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Agent</label>
+                        <select class="form-select" @bind="nouvelleDemande.IdAgent">
+                            <option value="0">-- Choisir un agent --</option>
+                            @foreach (var agent in agents)
+                            {
+                                <option value="@agent.Id">@agent.NomComplet</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Commentaire / Motif</label>
+                        <textarea class="form-control" rows="3"
+                                  @bind="nouvelleDemande.Commentaire"
+                                  placeholder="Motif de la demande..."></textarea>
+                    </div>
+                    @if (erreurDemande != null)
+                    {
+                        <div class="alert alert-danger">@erreurDemande</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => showModalDemande = false">Annuler</button>
+                    <button class="btn btn-primary" @onclick="SoumettreDemande">📤 Soumettre</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Approuver -->
+@if (showModalApprouver)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">✅ Approuver la demande</h5>
+                    <button type="button" class="btn-close" @onclick="() => showModalApprouver = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Type de congé</label>
+                        <select class="form-select" @bind="typeConge">
+                            <option value="Congé annuel">Congé annuel</option>
+                            <option value="Congé maladie">Congé maladie</option>
+                            <option value="Congé maternité">Congé maternité</option>
+                            <option value="Congé paternité">Congé paternité</option>
+                            <option value="Congé exceptionnel">Congé exceptionnel</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date début</label>
+                        <input type="date" class="form-control" @bind="dateDebut" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date fin</label>
+                        <input type="date" class="form-control" @bind="dateFin" />
+                    </div>
+                    @if (dateDebut != default && dateFin != default && dateFin >= dateDebut)
+                    {
+                        <div class="alert alert-info">
+                            Durée : @((int)(dateFin - dateDebut).TotalDays + 1) jours
+                        </div>
+                    }
+                    @if (erreurApprouver != null)
+                    {
+                        <div class="alert alert-danger">@erreurApprouver</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => showModalApprouver = false">Annuler</button>
+                    <button class="btn btn-success" @onclick="Approuver">✅ Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Refuser -->
+@if (showModalRefuser)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">❌ Refuser la demande</h5>
+                    <button type="button" class="btn-close" @onclick="() => showModalRefuser = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Motif du refus</label>
+                        <textarea class="form-control" rows="3"
+                                  @bind="motifRefus"
+                                  placeholder="Expliquez la raison du refus..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => showModalRefuser = false">Annuler</button>
+                    <button class="btn btn-danger" @onclick="Refuser">❌ Confirmer le refus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<DemandeConge> toutesLesdemandes = new();
+    private List<Agent> agents = new();
+    private string ongletActif = "toutes";
+    private DemandeConge nouvelleDemande = new();
+    private DemandeConge? demandeSelectionnee = null;
+    private bool showModalDemande = false;
+    private bool showModalApprouver = false;
+    private bool showModalRefuser = false;
+    private string? erreurDemande = null;
+    private string? erreurApprouver = null;
+    private string typeConge = "Congé annuel";
+    private DateTime dateDebut = DateTime.Today;
+    private DateTime dateFin = DateTime.Today.AddDays(7);
+    private string motifRefus = "";
+
+    private List<DemandeConge> demandesFiltrees => ongletActif == "toutes"
+        ? toutesLesdemandes
+        : toutesLesdemandes.Where(d => d.Statut == ongletActif).ToList();
+
+    private List<DemandeConge> demandesEnAttente =>
+        toutesLesdemandes.Where(d => d.Statut == "attente").ToList();
+
+    protected override void OnInitialized()
+    {
+        toutesLesdemandes = CongeService.GetAllDemandes();
+        agents = AgentService.GetAll();
+    }
+
+    private void OuvrirModalDemande()
+    {
+        nouvelleDemande = new DemandeConge();
+        erreurDemande = null;
+        showModalDemande = true;
+    }
+
+    private void OuvrirModalApprouver(DemandeConge demande)
+    {
+        demandeSelectionnee = demande;
+        dateDebut = DateTime.Today;
+        dateFin = DateTime.Today.AddDays(7);
+        typeConge = "Congé annuel";
+        erreurApprouver = null;
+        showModalApprouver = true;
+    }
+
+    private void OuvrirModalRefuser(DemandeConge demande)
+    {
+        demandeSelectionnee = demande;
+        motifRefus = "";
+        showModalRefuser = true;
+    }
+
+    private void SoumettreDemande()
+    {
+        if (nouvelleDemande.IdAgent == 0)
+        {
+            erreurDemande = "Veuillez choisir un agent.";
+            return;
+        }
+
+        CongeService.SoumettreDemande(nouvelleDemande);
+        toutesLesdemandes = CongeService.GetAllDemandes();
+        showModalDemande = false;
+        StateHasChanged();
+    }
+
+    private void Approuver()
+    {
+        if (demandeSelectionnee == null) return;
+        if (dateFin < dateDebut)
+        {
+            erreurApprouver = "La date de fin doit être après la date de début.";
+            return;
+        }
+
+        CongeService.Approuver(demandeSelectionnee.IdDemande, dateDebut, dateFin, typeConge);
+        toutesLesdemandes = CongeService.GetAllDemandes();
+        showModalApprouver = false;
+        StateHasChanged();
+    }
+
+    private void Refuser()
+    {
+        if (demandeSelectionnee == null) return;
+
+        CongeService.Refuser(demandeSelectionnee.IdDemande, motifRefus);
+        toutesLesdemandes = CongeService.GetAllDemandes();
+        showModalRefuser = false;
+        StateHasChanged();
+    }
+
+    private string GetBadgeClass(string statut) => statut switch
+    {
+        "attente" => "bg-warning text-dark",
+        "approuve" => "bg-success",
+        "refuse" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private string GetStatutLabel(string statut) => statut switch
+    {
+        "attente" => "⏳ En attente",
+        "approuve" => "✅ Approuvé",
+        "refuse" => "❌ Refusé",
+        _ => statut
+    };
+}

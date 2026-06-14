@@ -1,4 +1,8 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using GestionPersonnelMairie.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthStateService AuthState
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">🏛️ Mairie de Banikoara</a>
         <button class="navbar-toggler" @onclick="ToggleNavMenu">
@@ -22,15 +26,54 @@
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="agents">
-                <span class="bi bi-people-fill" aria-hidden="true"></span> Agents
-            </NavLink>
-        </div>
+        @if (AuthState.EstAdmin)
+        {
+            <div class="nav-section-label px-3 mt-2">ADMINISTRATION</div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="agents">
+                    <span class="bi bi-people-fill" aria-hidden="true"></span> Agents
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="utilisateurs">
+                    <span class="bi bi-person-badge-fill" aria-hidden="true"></span> Utilisateurs
+                </NavLink>
+            </div>
+        }
+
+        <div class="nav-section-label px-3 mt-2">RH</div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="conges">
                 <span class="bi bi-calendar-check-fill" aria-hidden="true"></span> Congés
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="paie">
+                <span class="bi bi-cash-coin" aria-hidden="true"></span> Paie
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="evaluations">
+                <span class="bi bi-star-fill" aria-hidden="true"></span> Évaluations
+            </NavLink>
+        </div>
+
+        <div class="nav-section-label px-3 mt-2">OUTILS</div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="rapports">
+                <span class="bi bi-file-earmark-bar-graph-fill" aria-hidden="true"></span> Rapports
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="profil">
+                <span class="bi bi-person-circle" aria-hidden="true"></span> Mon profil
             </NavLink>
         </div>
 

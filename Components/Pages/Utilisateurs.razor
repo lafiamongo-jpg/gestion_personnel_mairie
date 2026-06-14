@@ -1,0 +1,211 @@
+@page "/utilisateurs"
+@rendermode InteractiveServer
+@using GestionPersonnelMairie.Models
+@using GestionPersonnelMairie.Services
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Administrateur")]
+@inject UtilisateurService UtilisateurService
+@inject AuthStateService AuthState
+
+<PageTitle>Gestion des Utilisateurs</PageTitle>
+
+@if (showSucces)
+{
+    <div style="position:fixed;top:20px;right:20px;z-index:9999;">
+        <div class="alert alert-success alert-dismissible shadow" style="min-width:300px;">
+            <strong>✅</strong> @succesMsg
+            <button class="btn-close" @onclick="() => showSucces = false"></button>
+        </div>
+    </div>
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🔐 Gestion des Utilisateurs</h2>
+        <span class="badge bg-secondary">@utilisateurs.Count utilisateur(s)</span>
+    </div>
+
+    <!-- Filtres -->
+    <div class="row mb-3">
+        <div class="col-md-5">
+            <input type="text" class="form-control" placeholder="🔍 Rechercher par nom ou email..."
+                   @bind="recherche" @bind:event="oninput" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="roleFiltre">
+                <option value="">Tous les rôles</option>
+                <option value="Administrateur">Administrateur</option>
+                <option value="Agent">Agent</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Tableau -->
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>Rôle</th>
+                    <th>Agent lié</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in utilisateursFiltres)
+                {
+                    <tr>
+                        <td>@u.Nom</td>
+                        <td>@u.Email</td>
+                        <td>
+                            <span class="badge @(u.Role?.NomRole == "Administrateur" ? "bg-danger" : "bg-primary")">
+                                @(u.Role?.NomRole ?? "-")
+                            </span>
+                        </td>
+                        <td>@(u.Agent?.NomComplet ?? "-")</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning me-1" @onclick="() => OuvrirModal(u)">✏️</button>
+                            <button class="btn btn-sm btn-danger"
+                                    @onclick="() => Supprimer(u.IdUtilisateur)"
+                                    disabled="@(u.IdUtilisateur == AuthState.UtilisateurId)">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                }
+                @if (!utilisateursFiltres.Any())
+                {
+                    <tr><td colspan="5" class="text-center text-muted">Aucun utilisateur trouvé.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Modifier -->
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">✏️ Modifier l'utilisateur</h5>
+                    <button class="btn-close" @onclick="() => showModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nom</label>
+                        <input class="form-control" @bind="editNom" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" @bind="editEmail" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rôle</label>
+                        <select class="form-select" @bind="editRoleId">
+                            @foreach (var r in roles)
+                            {
+                                <option value="@r.IdRole">@r.NomRole</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nouveau mot de passe <span class="text-muted">(laisser vide pour ne pas changer)</span></label>
+                        <input type="password" class="form-control" @bind="nouveauMdp" placeholder="••••••••" />
+                    </div>
+                    @if (erreurModal != null)
+                    {
+                        <div class="alert alert-danger">@erreurModal</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => showModal = false">Annuler</button>
+                    <button class="btn btn-primary" @onclick="Sauvegarder">💾 Sauvegarder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Utilisateur> utilisateurs = new();
+    private List<Role> roles = new();
+    private string recherche = "";
+    private string roleFiltre = "";
+    private bool showModal = false;
+    private bool showSucces = false;
+    private string succesMsg = "";
+    private int editUserId;
+    private string editNom = "";
+    private string editEmail = "";
+    private int editRoleId;
+    private string nouveauMdp = "";
+    private string? erreurModal;
+
+    private List<Utilisateur> utilisateursFiltres => utilisateurs
+        .Where(u =>
+            (string.IsNullOrEmpty(recherche) ||
+             u.Nom.Contains(recherche, StringComparison.OrdinalIgnoreCase) ||
+             u.Email.Contains(recherche, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(roleFiltre) || u.Role?.NomRole == roleFiltre))
+        .ToList();
+
+    protected override void OnInitialized()
+    {
+        Charger();
+    }
+
+    private void Charger()
+    {
+        utilisateurs = UtilisateurService.GetAll();
+        roles = UtilisateurService.GetRoles();
+    }
+
+    private void OuvrirModal(Utilisateur u)
+    {
+        erreurModal = null;
+        nouveauMdp = "";
+        editUserId = u.IdUtilisateur;
+        editNom = u.Nom;
+        editEmail = u.Email;
+        editRoleId = u.IdRole;
+        showModal = true;
+    }
+
+    private async void Sauvegarder()
+    {
+        erreurModal = null;
+
+        if (!string.IsNullOrWhiteSpace(nouveauMdp) && nouveauMdp.Length < 6)
+        {
+            erreurModal = "Le mot de passe doit faire au moins 6 caractères.";
+            return;
+        }
+
+        UtilisateurService.Update(editUserId, editNom, editEmail, editRoleId,
+            string.IsNullOrWhiteSpace(nouveauMdp) ? null : nouveauMdp);
+
+        Charger();
+        showModal = false;
+        succesMsg = $"Utilisateur {editNom} mis à jour.";
+        showSucces = true;
+        StateHasChanged();
+        await Task.Delay(3000);
+        showSucces = false;
+        StateHasChanged();
+    }
+
+    private async void Supprimer(int id)
+    {
+        UtilisateurService.Delete(id);
+        Charger();
+        succesMsg = "Utilisateur supprimé.";
+        showSucces = true;
+        StateHasChanged();
+        await Task.Delay(3000);
+        showSucces = false;
+        StateHasChanged();
+    }
+}

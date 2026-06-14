@@ -1,0 +1,129 @@
+@page "/profil"
+@rendermode InteractiveServer
+@using GestionPersonnelMairie.Services
+@using GestionPersonnelMairie.Models
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthStateService AuthState
+@inject AuthService AuthService
+@inject AgentService AgentService
+
+<PageTitle>Mon Profil</PageTitle>
+
+<div class="container py-4" style="max-width:720px;">
+
+    <h2 class="mb-4">👤 Mon Profil</h2>
+
+    @if (agent != null)
+    {
+        <!-- Carte Identité -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body d-flex align-items-center gap-4">
+                <div style="width:72px;height:72px;border-radius:50%;background:#185FA5;
+                            display:flex;align-items:center;justify-content:center;
+                            font-size:1.8rem;font-weight:700;color:white;flex-shrink:0;">
+                    @agent.Initiales
+                </div>
+                <div>
+                    <h4 class="mb-1">@agent.NomComplet</h4>
+                    <div class="text-muted" style="font-size:0.9rem;">
+                        📧 @agent.Email &nbsp;|&nbsp;
+                        📞 @agent.Telephone &nbsp;|&nbsp;
+                        🏢 @(agent.Service?.NomService ?? "-")
+                    </div>
+                    <div class="mt-1" style="font-size:0.9rem;">
+                        💼 @(agent.Poste?.NomPoste ?? "-") &nbsp;|&nbsp;
+                        🗺️ @agent.Departement &nbsp;|&nbsp;
+                        📅 Embauché le @agent.DateEmbauche.ToShortDateString()
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge @(AuthState.EstAdmin ? "bg-danger" : "bg-primary")">
+                            @AuthState.Role
+                        </span>
+                        <span class="badge ms-2 @(agent.Statut == "Actif" ? "bg-success" : "bg-warning text-dark")">
+                            @agent.Statut
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Changer mot de passe -->
+    <div class="card shadow-sm">
+        <div class="card-header fw-semibold">🔒 Changer le mot de passe</div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Ancien mot de passe</label>
+                <input type="password" class="form-control" @bind="ancienMdp" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Nouveau mot de passe</label>
+                <input type="password" class="form-control" @bind="nouveauMdp" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Confirmer le nouveau mot de passe</label>
+                <input type="password" class="form-control" @bind="confirmerMdp" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(erreur))
+            {
+                <div class="alert alert-danger">@erreur</div>
+            }
+            @if (!string.IsNullOrEmpty(succes))
+            {
+                <div class="alert alert-success">@succes</div>
+            }
+
+            <button class="btn btn-primary" @onclick="ChangerMotDePasse">
+                💾 Enregistrer
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Agent? agent;
+    private string ancienMdp = "";
+    private string nouveauMdp = "";
+    private string confirmerMdp = "";
+    private string? erreur;
+    private string? succes;
+
+    protected override void OnInitialized()
+    {
+        if (AuthState.AgentId.HasValue)
+            agent = AgentService.GetById(AuthState.AgentId.Value);
+    }
+
+    private void ChangerMotDePasse()
+    {
+        erreur = null; succes = null;
+
+        if (string.IsNullOrWhiteSpace(ancienMdp) || string.IsNullOrWhiteSpace(nouveauMdp))
+        {
+            erreur = "Veuillez remplir tous les champs.";
+            return;
+        }
+        if (nouveauMdp.Length < 6)
+        {
+            erreur = "Le nouveau mot de passe doit contenir au moins 6 caractères.";
+            return;
+        }
+        if (nouveauMdp != confirmerMdp)
+        {
+            erreur = "Les mots de passe ne correspondent pas.";
+            return;
+        }
+
+        try
+        {
+            AuthService.ChangerMotDePasse(AuthState.UtilisateurId!.Value, ancienMdp, nouveauMdp);
+            succes = "✅ Mot de passe mis à jour avec succès.";
+            ancienMdp = nouveauMdp = confirmerMdp = "";
+        }
+        catch (Exception ex)
+        {
+            erreur = ex.Message;
+        }
+    }
+}

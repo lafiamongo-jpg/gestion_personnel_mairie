@@ -283,7 +283,13 @@
                 chargement = false;
                 return;
             }
-            await AuthStateProvider.LoginAsync(utilisateur.Email);
+            await AuthStateProvider.LoginAsync(
+                utilisateur.Email,
+                utilisateur.Nom,
+                utilisateur.Role?.NomRole ?? "Agent",
+                utilisateur.IdAgent,
+                utilisateur.IdUtilisateur
+            );
             Navigation.NavigateTo("/");
         }
         catch (Exception ex) { erreur = "Erreur : " + ex.Message; }

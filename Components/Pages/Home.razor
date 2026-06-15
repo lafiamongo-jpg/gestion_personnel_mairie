@@ -1,5 +1,6 @@
 ﻿@page "/"
 @rendermode InteractiveServer
+@using GestionPersonnelMairie.Core.Constants
 @using Microsoft.AspNetCore.Components.Authorization
 @using GestionPersonnelMairie.Services
 @using GestionPersonnelMairie.Models
@@ -11,167 +12,26 @@
 
 <PageTitle>Accueil – Gestion Personnel Mairie de Banikoara</PageTitle>
 
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
-
-<style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Sora', sans-serif; background: #f0f2f7; color: #0f1c35; }
-    .topbar { background: #0a1628; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 56px; }
-    .tb-left { display: flex; align-items: center; gap: 16px; }
-    .tb-logo { width: 32px; height: 32px; background: #2563eb; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
-    .tb-logo svg { width: 18px; height: 18px; }
-    .tb-name { font-size: 13px; font-weight: 600; color: #fff; letter-spacing: .3px; }
-    .tb-sep { width: 1px; height: 18px; background: rgba(255,255,255,.15); }
-    .tb-app { font-size: 12px; color: #94a3b8; letter-spacing: .5px; text-transform: uppercase; }
-    .tb-right { display: flex; align-items: center; gap: 8px; }
-    .tb-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; }
-    .tb-status { font-size: 11px; color: #64748b; }
-    .navbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 48px; display: flex; align-items: center; height: 52px; }
-    .navbar a { font-size: 13px; color: #475569; text-decoration: none; padding: 0 18px; height: 52px; display: flex; align-items: center; border-bottom: 2px solid transparent; transition: .15s; font-weight: 400; }
-    .navbar a:hover { color: #2563eb; background: #f8faff; }
-    .navbar a.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 500; }
-    .nav-end { margin-left: auto; }
-    .hero-wrap { position: relative; overflow: hidden; padding: 56px 48px 0; background: #0a1628; }
-    .hero-bg { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/H%C3%B4tel_de_ville_de_Cotonou.jpg/1280px-H%C3%B4tel_de_ville_de_Cotonou.jpg'); background-size: cover; background-position: center top; opacity: 0.22; }
-    .hero-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(8,16,32,0.95) 0%, rgba(10,22,40,0.88) 40%, rgba(15,28,60,0.72) 100%); }
-    .hero-inner { display: grid; grid-template-columns: 1fr 420px; gap: 40px; align-items: end; position: relative; z-index: 2; }
-    .hero-left { padding-bottom: 48px; }
-    .hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; background: rgba(37,99,235,.2); border: 1px solid rgba(37,99,235,.4); border-radius: 20px; padding: 5px 14px; margin-bottom: 28px; }
-    .hero-eyebrow span { font-size: 11px; color: #93c5fd; letter-spacing: .8px; text-transform: uppercase; font-weight: 500; }
-    .pulse { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; animation: blink 2s infinite; }
-    @@keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
-    .hero h1 { font-family: 'Lora', serif; font-size: 44px; font-weight: 600; color: #fff; line-height: 1.2; margin-bottom: 16px; }
-    .hero h1 em { font-style: italic; color: #60a5fa; }
-    .hero-desc { font-size: 14px; color: #94a3b8; line-height: 1.75; max-width: 480px; margin-bottom: 36px; font-weight: 300; }
-    .hero-btns { display: flex; gap: 12px; }
-    .btn-hero-p { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'Sora', sans-serif; }
-    .btn-hero-p:hover { background: #1d4ed8; }
-    .btn-hero-g { background: rgba(255,255,255,.08); color: #e2e8f0; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; padding: 11px 22px; font-size: 13px; cursor: pointer; font-family: 'Sora', sans-serif; }
-    .btn-hero-g:hover { background: rgba(255,255,255,.14); }
-    .hero-card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); border-radius: 12px 12px 0 0; padding: 24px; backdrop-filter: blur(8px); }
-    .hc-title { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 18px; font-weight: 500; }
-    .hc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .hc-stat { background: rgba(255,255,255,.06); border-radius: 8px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.08); }
-    .hc-n { font-family: 'Lora', serif; font-size: 28px; font-weight: 600; color: #fff; line-height: 1; }
-    .hc-l { font-size: 11px; color: #64748b; margin-top: 4px; }
-    .hc-d { font-size: 11px; margin-top: 6px; font-weight: 500; }
-    .up { color: #22c55e; } .warn { color: #f59e0b; } .neu { color: #60a5fa; }
-    .kpi-band { background: #fff; border-bottom: 1px solid #e2e8f0; display: grid; grid-template-columns: repeat(4, 1fr); }
-    .kpi-item { padding: 22px 32px; border-right: 1px solid #e2e8f0; position: relative; }
-    .kpi-item:last-child { border-right: none; }
-    .kpi-item::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-    .kpi-item.c1::before { background: #2563eb; } .kpi-item.c2::before { background: #f59e0b; } .kpi-item.c3::before { background: #10b981; } .kpi-item.c4::before { background: #8b5cf6; }
-    .kpi-num { font-family: 'Lora', serif; font-size: 30px; font-weight: 600; color: #0f1c35; line-height: 1; }
-    .kpi-label { font-size: 11px; color: #94a3b8; margin-top: 5px; text-transform: uppercase; letter-spacing: .6px; }
-    .kpi-delta { font-size: 11px; margin-top: 5px; font-weight: 500; }
-    .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; padding: 28px 48px; max-width: 1400px; margin: 0 auto; }
-    .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-bottom: 14px; }
-    .modules-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 24px; }
-    .module-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; cursor: pointer; transition: .18s; text-decoration: none; color: inherit; display: block; }
-    .module-card:hover { border-color: #2563eb; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,.1); }
-    .module-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
-    .module-name { font-size: 13px; font-weight: 600; color: #0f1c35; margin-bottom: 3px; }
-    .module-desc { font-size: 11px; color: #94a3b8; line-height: 1.5; }
-    .badge-module { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; margin-top: 8px; }
-    .activity-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
-    .card-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
-    .card-header span { font-size: 13px; font-weight: 600; color: #0f1c35; }
-    .card-header a { font-size: 11px; color: #2563eb; text-decoration: none; }
-    .activity-row { display: flex; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #f8fafc; }
-    .activity-row:last-child { border-bottom: none; }
-    .avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
-    .activity-info { flex: 1; }
-    .activity-name { font-size: 13px; font-weight: 500; color: #0f1c35; }
-    .activity-detail { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-    .status-pill { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 10px; }
-    .activity-time { font-size: 10px; color: #cbd5e1; text-align: right; margin-top: 3px; }
-    .calendar-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 16px; }
-    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .cal-month { font-size: 13px; font-weight: 600; color: #0f1c35; }
-    .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; text-align: center; }
-    .cal-day-header { font-size: 10px; color: #cbd5e1; padding: 4px; font-weight: 600; }
-    .cal-day { font-size: 11px; color: #475569; padding: 6px 4px; border-radius: 5px; cursor: pointer; transition: .12s; position: relative; }
-    .cal-day:hover { background: #f0f4ff; }
-    .cal-day.today { background: #2563eb; color: #fff; font-weight: 600; }
-    .cal-day.event { color: #2563eb; font-weight: 600; }
-    .cal-day.other { color: #e2e8f0; }
-    .notif-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
-    .notif-row { display: flex; align-items: flex-start; gap: 12px; padding: 13px 16px; border-bottom: 1px solid #f8fafc; }
-    .notif-row:last-child { border-bottom: none; }
-    .notif-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; }
-    .notif-msg { font-size: 12px; color: #334155; line-height: 1.5; }
-    .notif-time { font-size: 10px; color: #cbd5e1; margin-top: 2px; }
-    .dept-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-    .dept-row { margin-bottom: 13px; }
-    .dept-row:last-child { margin-bottom: 0; }
-    .dept-info { display: flex; justify-content: space-between; font-size: 12px; color: #334155; margin-bottom: 6px; }
-    .dept-info span:last-child { color: #94a3b8; }
-    .dept-bar-bg { background: #f0f4ff; border-radius: 4px; height: 5px; overflow: hidden; }
-    .dept-bar { height: 100%; border-radius: 4px; }
-    .footer { text-align: center; padding: 20px; font-size: 11px; color: #cbd5e1; border-top: 1px solid #e2e8f0; background: #fff; margin-top: 8px; }
-    /* Agent welcome card */
-    .agent-welcome { background: linear-gradient(135deg, #1e3a5f, #2563eb); color: #fff; border-radius: 14px; padding: 28px 32px; margin-bottom: 24px; display: flex; align-items: center; gap: 24px; }
-    .agent-avatar-big { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 700; flex-shrink: 0; }
-    .agent-kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
-    .agent-kpi { background: #fff; border-radius: 10px; padding: 18px 20px; border: 1px solid #e2e8f0; text-align: center; }
-    .agent-kpi-num { font-size: 2rem; font-weight: 700; color: #0f1c35; }
-    .agent-kpi-label { font-size: 11px; color: #94a3b8; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
-    .demandes-table { background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; }
-    .demandes-table table { width: 100%; border-collapse: collapse; }
-    .demandes-table th { background: #f8fafc; padding: 10px 16px; font-size: 11px; color: #64748b; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
-    .demandes-table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #f8fafc; }
-    .demandes-table tr:last-child td { border-bottom: none; }
-</style>
+<div class="home-page">
 
 @if (!estAuthentifie)
 {
     <p>Chargement...</p>
 }
-else if (AuthState.EstAdmin)
+else if (AuthState.PeutGererConges)
 {
     <!-- ═══════════════ VUE ADMINISTRATEUR ═══════════════ -->
 
-    <!-- TOPBAR -->
-    <div class="topbar">
-        <div class="tb-left">
-            <div class="tb-logo">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M3 21V10l9-7 9 7v11" stroke="white" stroke-width="1.6" stroke-linejoin="round" />
-                    <path d="M9 21v-6h6v6" stroke="white" stroke-width="1.6" stroke-linejoin="round" />
-                </svg>
-            </div>
-            <span class="tb-name">Commune de Banikoara</span>
-            <div class="tb-sep"></div>
-            <span class="tb-app">Système RH</span>
-        </div>
-        <div class="tb-right">
-            <div class="tb-dot"></div>
-            <span class="tb-status">Opérationnel</span>
-        </div>
-    </div>
-
-    <!-- NAVBAR ADMIN -->
-    <nav class="navbar">
-        <a href="/" class="active">Tableau de bord</a>
-        <a href="/agents">Agents</a>
-        <a href="/conges">Congés</a>
-        <a href="/paie">Paie</a>
-        <a href="/evaluations">Évaluations</a>
-        <a href="/rapports">Rapports</a>
-        <a href="/utilisateurs">Utilisateurs</a>
-    </nav>
-
-    <!-- HERO -->
-    <div class="hero-wrap">
-        <div class="hero-bg"></div>
-        <div class="hero-overlay"></div>
+    <section class="hero-wrap">
+        <div class="hero-bg" style="background-image: url('/images/mairie-banikoara.png')" role="presentation" aria-hidden="true"></div>
+        <div class="hero-overlay" role="presentation" aria-hidden="true"></div>
         <div class="hero-inner">
             <div class="hero-left">
                 <div class="hero-eyebrow">
                     <span class="pulse"></span>
                     <span>Administration — @DateTime.Now.Year</span>
                 </div>
-                <h1>Gestion du personnel<br /><em>de la Mairie de Banikoara</em></h1>
+                <h1>Gestion du personnel<em>de la Mairie de Banikoara</em></h1>
                 <p class="hero-desc">
                     Centralisez et administrez les ressources humaines de la commune
                     avec efficacité, transparence et rigueur institutionnelle.
@@ -192,12 +52,12 @@ else if (AuthState.EstAdmin)
                         <div class="hc-stat">
                             <div class="hc-n">@totalAgents</div>
                             <div class="hc-l">Total agents</div>
-                            <div class="hc-d up">✅ @agentsActifs actifs</div>
+                            <div class="hc-d up">@agentsActifs actifs</div>
                         </div>
                         <div class="hc-stat">
                             <div class="hc-n">@agentsConge</div>
                             <div class="hc-l">En congé</div>
-                            <div class="hc-d warn">⏳ @congesEnAttente en attente</div>
+                            <div class="hc-d warn">@congesEnAttente en attente</div>
                         </div>
                         <div class="hc-stat">
                             <div class="hc-n">@masseSalarialeStr</div>
@@ -205,93 +65,133 @@ else if (AuthState.EstAdmin)
                             <div class="hc-d neu">Mois en cours</div>
                         </div>
                         <div class="hc-stat">
-                            <div class="hc-n">@nbDepartements</div>
-                            <div class="hc-l">Départements</div>
-                            <div class="hc-d up">Bénin</div>
+                            <div class="hc-n">@nbServices</div>
+                            <div class="hc-l">Services</div>
+                            <div class="hc-d up">Mairie</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- KPI BAND -->
-    <div class="kpi-band">
+    <div class="home-body">
+    <section class="kpi-band">
         <div class="kpi-item c1">
             <div class="kpi-num">@totalAgents</div>
             <div class="kpi-label">Total agents</div>
-            <div class="kpi-delta up">✅ @agentsActifs actifs</div>
+            <div class="kpi-delta up">@agentsActifs actifs</div>
         </div>
         <div class="kpi-item c2">
             <div class="kpi-num">@agentsConge</div>
             <div class="kpi-label">En congé</div>
-            <div class="kpi-delta warn">⏳ @congesEnAttente en attente</div>
+            <div class="kpi-delta warn">@congesEnAttente en attente</div>
         </div>
         <div class="kpi-item c3">
-            <div class="kpi-num">@nbDepartements</div>
-            <div class="kpi-label">Départements</div>
-            <div class="kpi-delta up">Bénin</div>
+            <div class="kpi-num">@nbServices</div>
+            <div class="kpi-label">Services</div>
+            <div class="kpi-delta up">@nbServices actif@(nbServices > 1 ? "s" : "")</div>
         </div>
         <div class="kpi-item c4">
             <div class="kpi-num">@masseSalarialeStr</div>
             <div class="kpi-label">Masse salariale (FCFA)</div>
             <div class="kpi-delta neu">Mois en cours</div>
         </div>
-    </div>
+    </section>
 
-    <!-- MAIN GRID ADMIN -->
     <div class="main-grid">
         <div>
             <div class="section-title">Modules du système</div>
             <div class="modules-grid">
-                <a href="/agents" class="module-card">
-                    <div class="module-icon" style="background:#eff6ff">
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4" stroke="#2563eb" stroke-width="1.5"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="#2563eb" stroke-width="1.5"/></svg>
+                @if (AuthState.PeutGererAgents)
+                {
+                    <div class="module-card" @onclick='() => Go("/agents")'>
+                        <div class="module-icon module-icon--blue">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4" stroke="#2563eb" stroke-width="1.5"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="#2563eb" stroke-width="1.5"/></svg>
+                        </div>
+                        <div class="module-name">Gestion des agents</div>
+                        <div class="module-desc">Dossiers, profils et affectations</div>
+                        <span class="badge-module badge-module--blue">@AgentLabel</span>
                     </div>
-                    <div class="module-name">Gestion des agents</div>
-                    <div class="module-desc">Dossiers, profils, affectations par département</div>
-                    <span class="badge-module" style="background:#eff6ff;color:#1d4ed8">@totalAgents agents</span>
-                </a>
-                <a href="/conges" class="module-card">
-                    <div class="module-icon" style="background:#fffbeb">
+                }
+                <div class="module-card" @onclick='() => Go("/conges")'>
+                    <div class="module-icon module-icon--amber">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#f59e0b" stroke-width="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/></svg>
                     </div>
                     <div class="module-name">Congés &amp; absences</div>
-                    <div class="module-desc">Demandes, validation hiérarchique, soldes</div>
-                    <span class="badge-module" style="background:#fffbeb;color:#b45309">@congesEnAttente en attente</span>
-                </a>
-                <a href="/paie" class="module-card">
-                    <div class="module-icon" style="background:#ecfdf5">
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#10b981" stroke-width="1.5"/><line x1="12" y1="12" x2="12" y2="16" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="14" x2="14" y2="14" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <div class="module-desc">Demandes, validation et soldes</div>
+                    <span class="badge-module badge-module--amber">@congesEnAttente en attente</span>
+                </div>
+                @if (AuthState.PeutGererServices)
+                {
+                    <div class="module-card" @onclick='() => Go("/services")'>
+                        <div class="module-icon module-icon--green">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#10b981" stroke-width="1.5"/><path d="M3 9h18M9 21V9" stroke="#10b981" stroke-width="1.5"/></svg>
+                        </div>
+                        <div class="module-name">Services municipaux</div>
+                        <div class="module-desc">Organisation et affectations</div>
+                        <span class="badge-module badge-module--green">@nbServices services</span>
                     </div>
-                    <div class="module-name">Fiches de paie</div>
-                    <div class="module-desc">Bulletins mensuels, indemnités, primes</div>
-                    <span class="badge-module" style="background:#ecfdf5;color:#065f46">Module actif</span>
-                </a>
-                <a href="/rapports" class="module-card">
-                    <div class="module-icon" style="background:#f5f3ff">
+                }
+                @if (AuthState.PeutGererAgents)
+                {
+                    <div class="module-card" @onclick='() => Go("/postes")'>
+                        <div class="module-icon module-icon--sky">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#0ea5e9" stroke-width="1.5"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="#0ea5e9" stroke-width="1.5"/></svg>
+                        </div>
+                        <div class="module-name">Postes</div>
+                        <div class="module-desc">Vacants, occupés par service</div>
+                        <span class="badge-module badge-module--sky">Gestion</span>
+                    </div>
+                    <div class="module-card" @onclick='() => Go("/utilisateurs")'>
+                        <div class="module-icon module-icon--red">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#dc2626" stroke-width="1.5"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#dc2626" stroke-width="1.5"/></svg>
+                        </div>
+                        <div class="module-name">Utilisateurs</div>
+                        <div class="module-desc">Comptes, rôles et accès</div>
+                        <span class="badge-module badge-module--red">SuperAdmin</span>
+                    </div>
+                    <div class="module-card" @onclick='() => Go("/audit")'>
+                        <div class="module-icon module-icon--violet">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#8b5cf6" stroke-width="1.5"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        </div>
+                        <div class="module-name">Journal d'audit</div>
+                        <div class="module-desc">Connexions et actions sensibles</div>
+                        <span class="badge-module badge-module--violet">Sécurité</span>
+                    </div>
+                }
+                <div class="module-card" @onclick='() => Go("/dashboard")'>
+                    <div class="module-icon module-icon--violet">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round"/></svg>
                     </div>
-                    <div class="module-name">Rapports &amp; statistiques</div>
-                    <div class="module-desc">Analyses RH, exports, tableaux de bord</div>
-                    <span class="badge-module" style="background:#f5f3ff;color:#6d28d9">Actif</span>
-                </a>
-                <a href="/evaluations" class="module-card">
-                    <div class="module-icon" style="background:#fff1f2">
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" stroke="#f43f5e" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                    <div class="module-name">Tableau de bord analytique</div>
+                    <div class="module-desc">Graphiques et statistiques RH</div>
+                    <span class="badge-module badge-module--violet">Analytics</span>
+                </div>
+                <div class="module-card soon" @onclick='() => Go("/paie")'>
+                    <div class="module-icon module-icon--muted">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#94a3b8" stroke-width="1.5"/></svg>
+                    </div>
+                    <div class="module-name">Fiches de paie</div>
+                    <div class="module-desc">Bulletins, indemnités, primes</div>
+                    <span class="badge-module badge-module--muted">Prochainement</span>
+                </div>
+                <div class="module-card soon" @onclick='() => Go("/evaluations")'>
+                    <div class="module-icon module-icon--muted">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" stroke="#94a3b8" stroke-width="1.5" stroke-linejoin="round"/></svg>
                     </div>
                     <div class="module-name">Évaluations</div>
-                    <div class="module-desc">Notation annuelle, avancements, promotions</div>
-                    <span class="badge-module" style="background:#fff1f2;color:#be123c">Actif</span>
-                </a>
-                <a href="/utilisateurs" class="module-card">
-                    <div class="module-icon" style="background:#fef2f2">
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#dc2626" stroke-width="1.5"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#dc2626" stroke-width="1.5"/></svg>
+                    <div class="module-desc">Notation et avancements</div>
+                    <span class="badge-module badge-module--muted">Prochainement</span>
+                </div>
+                <div class="module-card soon" @onclick='() => Go("/rapports")'>
+                    <div class="module-icon module-icon--muted">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg>
                     </div>
-                    <div class="module-name">Utilisateurs</div>
-                    <div class="module-desc">Comptes, rôles et accès au système</div>
-                    <span class="badge-module" style="background:#fef2f2;color:#991b1b">Admin</span>
-                </a>
+                    <div class="module-name">Rapports &amp; exports</div>
+                    <div class="module-desc">PDF, Excel, analyses</div>
+                    <span class="badge-module badge-module--muted">Prochainement</span>
+                </div>
             </div>
 
             <!-- Derniers agents -->
@@ -299,7 +199,7 @@ else if (AuthState.EstAdmin)
             <div class="activity-card">
                 <div class="card-header">
                     <span>Agents récents</span>
-                    <a href="/agents">Voir tous →</a>
+                    <a href="#" @onclick='() => Go("/agents")' @onclick:preventDefault>Voir tous →</a>
                 </div>
                 @foreach (var agent in derniersAgents)
                 {
@@ -344,14 +244,14 @@ else if (AuthState.EstAdmin)
                 </div>
             </div>
 
-            <div class="section-title">Répartition par département</div>
+            <div class="section-title">Répartition par service</div>
             <div class="dept-card">
                 @foreach (var dept in departements)
                 {
                     <div class="dept-row">
                         <div class="dept-info">
                             <span>@dept.Nom</span>
-                            <span>@dept.NbAgents agents</span>
+                            <span>@dept.NbAgents agent@(dept.NbAgents > 1 ? "s" : "")</span>
                         </div>
                         <div class="dept-bar-bg">
                             <div class="dept-bar" style="width:@dept.Pourcent%;background:@dept.Couleur"></div>
@@ -361,22 +261,28 @@ else if (AuthState.EstAdmin)
             </div>
         </div>
     </div>
+
+    <footer class="footer">
+        Mairie de Banikoara &nbsp;·&nbsp; Système de Gestion du Personnel &nbsp;·&nbsp; @DateTime.Now.Year
+    </footer>
+    </div>
 }
 else
 {
     <!-- ═══════════════ VUE AGENT ═══════════════ -->
-    <div class="main-grid" style="max-width:900px;margin:32px auto;grid-template-columns:1fr;">
+    <div class="home-body home-body--agent">
+    <div class="main-grid main-grid--agent">
         <div>
             <!-- Carte de bienvenue agent -->
             <div class="agent-welcome">
                 <div class="agent-avatar-big">@(monAgent?.Initiales ?? "?")</div>
                 <div>
-                    <div style="font-size:0.8rem;opacity:0.7;text-transform:uppercase;letter-spacing:.8px;">Bienvenue</div>
-                    <div style="font-size:1.5rem;font-weight:700;margin:4px 0;">@(monAgent?.NomComplet ?? AuthState.NomComplet)</div>
-                    <div style="font-size:0.85rem;opacity:0.8;">
-                        💼 @(monAgent?.Poste?.NomPoste ?? "-") &nbsp;|&nbsp;
-                        🏢 @(monAgent?.Service?.NomService ?? "-") &nbsp;|&nbsp;
-                        🗺️ @(monAgent?.Departement ?? "-")
+                    <div class="agent-welcome-eyebrow">Bienvenue</div>
+                    <div class="agent-welcome-name">@(monAgent?.NomComplet ?? AuthState.NomComplet)</div>
+                    <div class="agent-welcome-meta">
+                        <span>@(monAgent?.Poste?.NomPoste ?? "-")</span>
+                        <span>@(monAgent?.Service?.NomService ?? "-")</span>
+                        <span>@(monAgent?.Departement ?? "-")</span>
                     </div>
                 </div>
             </div>
@@ -388,58 +294,50 @@ else
                     <div class="agent-kpi-label">Demandes de congé</div>
                 </div>
                 <div class="agent-kpi">
-                    <div class="agent-kpi-num" style="color:#f59e0b">@mesDemandes.Count(d => d.Statut == "attente")</div>
+                    <div class="agent-kpi-num agent-kpi-num--warn">@mesDemandes.Count(d => d.Statut == "attente")</div>
                     <div class="agent-kpi-label">En attente</div>
                 </div>
                 <div class="agent-kpi">
-                    <div class="agent-kpi-num" style="color:#10b981">@mesDemandes.Count(d => d.Statut == "approuve")</div>
+                    <div class="agent-kpi-num agent-kpi-num--ok">@mesDemandes.Count(d => d.Statut == "approuve")</div>
                     <div class="agent-kpi-label">Approuvées</div>
                 </div>
             </div>
 
             <!-- Accès rapides -->
             <div class="section-title">Mes accès rapides</div>
-            <div class="modules-grid" style="grid-template-columns: repeat(3,1fr); margin-bottom:24px;">
-                <a href="/conges" class="module-card">
-                    <div class="module-icon" style="background:#fffbeb">
+            <div class="modules-grid modules-grid--agent">
+                <div class="module-card" @onclick='() => Go("/conges")'>
+                    <div class="module-icon module-icon--amber">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#f59e0b" stroke-width="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/></svg>
                     </div>
                     <div class="module-name">Mes congés</div>
                     <div class="module-desc">Voir et soumettre des demandes de congé</div>
-                    <span class="badge-module" style="background:#fffbeb;color:#b45309">@mesDemandes.Count(d=>d.Statut=="attente") en attente</span>
-                </a>
-                <a href="/paie" class="module-card">
-                    <div class="module-icon" style="background:#ecfdf5">
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#10b981" stroke-width="1.5"/><line x1="12" y1="12" x2="12" y2="16" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="14" x2="14" y2="14" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <span class="badge-module badge-module--amber">@mesDemandes.Count(d=>d.Statut=="attente") en attente</span>
+                </div>
+                <div class="module-card soon" @onclick='() => Go("/paie")'>
+                    <div class="module-icon module-icon--muted">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#94a3b8" stroke-width="1.5"/></svg>
                     </div>
                     <div class="module-name">Mes bulletins de paie</div>
                     <div class="module-desc">Consulter mes fiches de paie mensuelles</div>
-                    <span class="badge-module" style="background:#ecfdf5;color:#065f46">Disponibles</span>
-                </a>
-                <a href="/evaluations" class="module-card">
-                    <div class="module-icon" style="background:#fff1f2">
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" stroke="#f43f5e" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                    <span class="badge-module badge-module--muted">Prochainement</span>
+                </div>
+                <div class="module-card soon" @onclick='() => Go("/evaluations")'>
+                    <div class="module-icon module-icon--muted">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" stroke="#94a3b8" stroke-width="1.5" stroke-linejoin="round"/></svg>
                     </div>
                     <div class="module-name">Mes évaluations</div>
                     <div class="module-desc">Consulter mes évaluations annuelles</div>
-                    <span class="badge-module" style="background:#fff1f2;color:#be123c">À jour</span>
-                </a>
-                <a href="/profil" class="module-card">
-                    <div class="module-icon" style="background:#f0f9ff">
+                    <span class="badge-module badge-module--muted">Prochainement</span>
+                </div>
+                <div class="module-card" @onclick='() => Go("/profil")'>
+                    <div class="module-icon module-icon--sky">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#0ea5e9" stroke-width="1.5"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#0ea5e9" stroke-width="1.5"/></svg>
                     </div>
                     <div class="module-name">Mon profil</div>
                     <div class="module-desc">Informations personnelles et mot de passe</div>
-                    <span class="badge-module" style="background:#f0f9ff;color:#0369a1">Profil</span>
-                </a>
-                <a href="/dashboard" class="module-card">
-                    <div class="module-icon" style="background:#f5f3ff">
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round"/></svg>
-                    </div>
-                    <div class="module-name">Tableau de bord</div>
-                    <div class="module-desc">Statistiques et graphiques du personnel</div>
-                    <span class="badge-module" style="background:#f5f3ff;color:#6d28d9">Stats</span>
-                </a>
+                    <span class="badge-module badge-module--sky">Profil</span>
+                </div>
             </div>
 
             <!-- Mes dernières demandes -->
@@ -483,11 +381,14 @@ else
             </div>
         </div>
     </div>
+
+    <footer class="footer">
+        Mairie de Banikoara &nbsp;·&nbsp; Système de Gestion du Personnel &nbsp;·&nbsp; @DateTime.Now.Year
+    </footer>
+    </div>
 }
 
-<footer class="footer">
-    Mairie de Banikoara &nbsp;·&nbsp; Système de Gestion du Personnel &nbsp;·&nbsp; @DateTime.Now.Year
-</footer>
+</div>
 
 @code {
     private bool estAuthentifie = false;
@@ -499,7 +400,8 @@ else
     private int agentsActifs;
     private int agentsConge;
     private int congesEnAttente;
-    private int nbDepartements;
+    private int nbServices;
+    private string AgentLabel => totalAgents <= 1 ? $"{totalAgents} agent" : $"{totalAgents} agents";
     private string masseSalarialeStr = "0";
     private List<Agent> derniersAgents = new();
 
@@ -528,20 +430,19 @@ else
         int total = debutMois + joursInMois;
         cellulesFin = total % 7 == 0 ? 0 : 7 - (total % 7);
 
-        if (AuthState.EstAdmin)
+        if (AuthState.PeutGererConges)
         {
-            // Données réelles pour l'admin
             var agents = AgentService.GetAll();
             totalAgents = agents.Count;
             agentsActifs = agents.Count(a => a.Statut == "Actif");
             agentsConge = agents.Count(a => a.Statut == "En congé");
-            nbDepartements = agents.Select(a => a.Departement).Distinct().Count();
+            nbServices = AgentService.GetServices().Count;
             var masse = agents.Sum(a => a.Salaire);
             masseSalarialeStr = masse >= 1_000_000 ? $"{masse / 1_000_000:F1}M" : masse.ToString("N0");
             derniersAgents = agents.OrderByDescending(a => a.DateEmbauche).Take(5).ToList();
             congesEnAttente = CongeService.GetAllDemandes().Count(d => d.Statut == "attente");
 
-            var groupes = agents.GroupBy(a => a.Departement)
+            var groupes = agents.GroupBy(a => a.Service?.NomService ?? "Non affecté")
                 .OrderByDescending(g => g.Count()).Take(5).ToList();
             int max = groupes.Any() ? groupes.Max(g => g.Count()) : 1;
             var couleurs = new[] { "#2563eb","#10b981","#f59e0b","#8b5cf6","#f43f5e" };
@@ -558,5 +459,6 @@ else
 
     private string GetBg(string s) => s switch { "approuve" => "#ecfdf5", "refuse" => "#fef2f2", _ => "#fffbeb" };
     private string GetFg(string s) => s switch { "approuve" => "#065f46", "refuse" => "#991b1b", _ => "#b45309" };
-    private string GetLabel(string s) => s switch { "approuve" => "✅ Approuvé", "refuse" => "❌ Refusé", _ => "⏳ En attente" };
+    private string GetLabel(string s) => s switch { "approuve" => "Approuvé", "refuse" => "Refusé", _ => "En attente" };
+    private void Go(string url) => NavigationManager.NavigateTo(url);
 }

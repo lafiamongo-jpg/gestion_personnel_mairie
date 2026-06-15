@@ -1,32 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\HP\\GestionPersonnelMairie\\GestionPersonnelMairie.csproj": {}
+    "/home/nahine/gestion_personnel_mairie/GestionPersonnelMairie.csproj": {}
   },
   "projects": {
-    "C:\\Users\\HP\\GestionPersonnelMairie\\GestionPersonnelMairie.csproj": {
+    "/home/nahine/gestion_personnel_mairie/GestionPersonnelMairie.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\HP\\GestionPersonnelMairie\\GestionPersonnelMairie.csproj",
+        "projectUniqueName": "/home/nahine/gestion_personnel_mairie/GestionPersonnelMairie.csproj",
         "projectName": "GestionPersonnelMairie",
-        "projectPath": "C:\\Users\\HP\\GestionPersonnelMairie\\GestionPersonnelMairie.csproj",
-        "packagesPath": "C:\\Users\\HP\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\HP\\GestionPersonnelMairie\\obj\\",
+        "projectPath": "/home/nahine/gestion_personnel_mairie/GestionPersonnelMairie.csproj",
+        "packagesPath": "/tmp/cursor-sandbox-cache/10021f649e908358cae8fda5ef3d421c/nuget",
+        "outputPath": "/home/nahine/gestion_personnel_mairie/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\HP\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/nahine/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -45,7 +38,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
@@ -58,8 +51,12 @@
             "Microsoft.AspNetCore.App.Internal.Assets": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[10.0.8, )",
+              "version": "[10.0.0, )",
               "autoReferenced": true
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[10.0.5, )"
             },
             "Microsoft.EntityFrameworkCore.Relational": {
               "target": "Package",
@@ -95,7 +92,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/home/nahine/.dotnet/sdk/10.0.100/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

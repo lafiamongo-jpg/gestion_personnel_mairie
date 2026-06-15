@@ -1,283 +1,257 @@
 @page "/dashboard"
 @rendermode InteractiveServer
+@using GestionPersonnelMairie.Core.Enums
 @using GestionPersonnelMairie.Services
 @using GestionPersonnelMairie.Models
 @inject AgentService AgentService
-@inject IJSRuntime JS
+@inject CongeService CongeService
 
 <PageTitle>Tableau de bord – Gestion Personnel Mairie</PageTitle>
 
-<style>
-    .dash-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-    }
-    .dash-header h2 {
-        font-size: 1.6rem;
-        font-weight: 700;
-        margin: 0;
-    }
-    .dash-header p {
-        color: #6c757d;
-        margin: 0;
-    }
-    .dash-date {
-        background: #f0f4ff;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        color: #185FA5;
-        font-weight: 500;
-    }
-    .kpi-row {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-    .kpi-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    }
-    .kpi-icon {
-        width: 52px;
-        height: 52px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-    }
-    .kpi-label {
-        font-size: 0.82rem;
-        color: #6c757d;
-        margin-bottom: 4px;
-    }
-    .kpi-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1a1a2e;
-    }
-    .kpi-sub {
-        font-size: 0.75rem;
-        color: #28a745;
-        margin-top: 2px;
-    }
-    .charts-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        margin-bottom: 16px;
-    }
-    .chart-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    }
-    .chart-card.full-width {
-        margin-bottom: 24px;
-    }
-    .chart-title {
-        font-size: 1rem;
-        font-weight: 600;
-        margin-bottom: 16px;
-        color: #1a1a2e;
-    }
-    .agents-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    .agents-table th {
-        background: #f8f9fa;
-        padding: 10px 14px;
-        text-align: left;
-        font-size: 0.82rem;
-        color: #6c757d;
-        font-weight: 600;
-    }
-    .agents-table td {
-        padding: 10px 14px;
-        font-size: 0.88rem;
-        border-bottom: 1px solid #f0f0f0;
-    }
-    .badge-actif { background: #d4edda; color: #155724; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; }
-    .badge-conge { background: #fff3cd; color: #856404; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; }
-    .badge-mission { background: #cce5ff; color: #004085; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; }
-    .initiales {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: #185FA5;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.85rem;
-    }
-    .agent-info {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-</style>
+<div class="dash">
 
-<!-- HEADER -->
-<div class="dash-header">
-    <div>
-        <h2>📊 Tableau de bord</h2>
-        <p>Vue d'ensemble du personnel de la mairie</p>
-    </div>
-    <div class="dash-date">@DateTime.Now.ToString("dddd dd MMMM yyyy")</div>
-</div>
-
-<!-- KPI CARDS -->
-<div class="kpi-row">
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:#E6F1FB; color:#185FA5">👥</div>
+    <div class="dash-top">
         <div>
-            <div class="kpi-label">Total Agents</div>
-            <div class="kpi-value">@totalAgents</div>
-            <div class="kpi-sub">✅ @agentsActifs actifs</div>
+            <h1 class="dash-title">Tableau de bord</h1>
+            <p class="dash-sub">Personnel de la Mairie de Banikoara</p>
+        </div>
+        <span class="dash-date">@dateDuJour</span>
+    </div>
+
+    <div class="dash-kpis">
+        <div class="dash-kpi c1">
+            <div class="dash-kpi-num">@totalAgents</div>
+            <div class="dash-kpi-lbl">Total agents</div>
+            <div class="dash-kpi-hint ok">@agentsActifs actif@(agentsActifs > 1 ? "s" : "")</div>
+        </div>
+        <div class="dash-kpi c2">
+            <div class="dash-kpi-num">@agentsEnConge</div>
+            <div class="dash-kpi-lbl">En congé</div>
+            <div class="dash-kpi-hint warn">@congesEnAttente en attente</div>
+        </div>
+        <div class="dash-kpi c3">
+            <div class="dash-kpi-num">@nbServices</div>
+            <div class="dash-kpi-lbl">Services</div>
+            <div class="dash-kpi-hint ok">@agentsAffectes affecté@(agentsAffectes > 1 ? "s" : "")</div>
+        </div>
+        <div class="dash-kpi c4">
+            <div class="dash-kpi-num">@masseSalarialeStr</div>
+            <div class="dash-kpi-lbl">Masse salariale</div>
+            <div class="dash-kpi-hint">FCFA / mois</div>
         </div>
     </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:#FAEEDA; color:#854F0B">🏖️</div>
-        <div>
-            <div class="kpi-label">En congé</div>
-            <div class="kpi-value">@agentsEnConge</div>
-            <div class="kpi-sub">📋 @agentsEnMission en mission</div>
-        </div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:#EAF3DE; color:#3B6D11">💰</div>
-        <div>
-            <div class="kpi-label">Masse salariale</div>
-            <div class="kpi-value">@masseSalariale.ToString("N0") FCFA</div>
-            <div class="kpi-sub">📅 Mois en cours</div>
-        </div>
-    </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:#EEEDFE; color:#534AB7">🏢</div>
-        <div>
-            <div class="kpi-label">Départements</div>
-            <div class="kpi-value">@totalDepartements</div>
-            <div class="kpi-sub">🗺️ Bénin</div>
-        </div>
-    </div>
-</div>
 
-<!-- GRAPHIQUES -->
-<div class="charts-grid">
-    <div class="chart-card">
-        <div class="chart-title">👥 Agents par service</div>
-        <canvas id="agentsChart" height="220"></canvas>
-    </div>
-    <div class="chart-card">
-        <div class="chart-title">📋 Statut des agents</div>
-        <canvas id="statutChart" height="220"></canvas>
-    </div>
-</div>
-
-<!-- TABLEAU DERNIERS AGENTS -->
-<div class="chart-card full-width">
-    <div class="chart-title">🕐 Derniers agents ajoutés</div>
-    <table class="agents-table">
-        <thead>
-            <tr>
-                <th>Agent</th>
-                <th>Département</th>
-                <th>Poste</th>
-                <th>Date embauche</th>
-                <th>Statut</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var agent in derniersAgents)
+    <div class="dash-panels">
+        <div class="dash-panel">
+            <h3 class="dash-panel-title">Répartition par service</h3>
+            @if (servicesResume.Any())
             {
-                <tr>
-                    <td>
-                        <div class="agent-info">
-                            <div class="initiales">@agent.Initiales</div>
-                            <div>
-                                <div style="font-weight:600">@agent.NomComplet</div>
-                                <div style="font-size:0.78rem;color:#6c757d">@agent.Email</div>
-                            </div>
+                @foreach (var s in servicesResume)
+                {
+                    <div class="dash-bar-row">
+                        <div class="dash-bar-head">
+                            <span>@s.Nom</span>
+                            <span>@s.Count agent@(s.Count > 1 ? "s" : "")</span>
                         </div>
-                    </td>
-                    <td>@agent.Departement</td>
-                    <td>@(agent.Poste?.NomPoste ?? "-")</td>
-                    <td>@agent.DateEmbauche.ToShortDateString()</td>
-                    <td>
-                        <span class="@GetBadgeClass(agent.Statut)">@agent.Statut</span>
-                    </td>
-                </tr>
+                        <div class="dash-bar-track">
+                            <div class="dash-bar-fill" style="width:@(s.Pourcent)%;background:@s.Couleur"></div>
+                        </div>
+                    </div>
+                }
             }
-            @if (!derniersAgents.Any())
+            else
             {
-                <tr>
-                    <td colspan="5" class="text-center text-muted py-3">Aucun agent trouvé.</td>
-                </tr>
+                <p class="dash-empty">Aucun agent enregistré.</p>
             }
-        </tbody>
-    </table>
+        </div>
+
+        <div class="dash-panel">
+            <h3 class="dash-panel-title">Statut des agents</h3>
+            @foreach (var s in statutsResume)
+            {
+                <div class="dash-bar-row">
+                    <div class="dash-bar-head">
+                        <span>@s.Label</span>
+                        <span>@s.Count</span>
+                    </div>
+                    <div class="dash-bar-track">
+                        <div class="dash-bar-fill" style="width:@(s.Pourcent)%;background:@s.Couleur"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Congés en attente -->
+    @if (congesEnAttenteList.Any())
+    {
+        <div class="dash-panel dash-panel--alert">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="dash-panel-title mb-0">
+                    ⏳ Congés en attente de traitement
+                    <span class="badge bg-warning text-dark ms-2">@congesEnAttenteList.Count</span>
+                </h3>
+                <a href="/conges" class="btn btn-sm btn-warning">Traiter →</a>
+            </div>
+            <div class="dash-table-wrap">
+                <table class="dash-table">
+                    <thead>
+                        <tr>
+                            <th>Agent</th>
+                            <th>Type</th>
+                            <th>Période demandée</th>
+                            <th>Soumis le</th>
+                            <th>Motif</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in congesEnAttenteList)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="dash-agent">
+                                        <span class="dash-avatar" style="background:#fef3c7;color:#b45309;">@(d.Agent?.Initiales ?? "?")</span>
+                                        <span>
+                                            <strong>@d.Agent?.NomComplet</strong>
+                                            <small>@d.Agent?.Email</small>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>@(d.TypeConge ?? "—")</td>
+                                <td>
+                                    @if (d.DateDebut.HasValue && d.DateFin.HasValue)
+                                    {
+                                        <span>@d.DateDebut.Value.ToString("dd/MM/yyyy") → @d.DateFin.Value.ToString("dd/MM/yyyy")</span>
+                                    }
+                                    else { <span class="text-muted">—</span> }
+                                </td>
+                                <td>@d.DateDemande.ToString("dd/MM/yyyy")</td>
+                                <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                    @(string.IsNullOrWhiteSpace(d.Commentaire) ? "—" : d.Commentaire)
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <div class="dash-panel dash-panel--table">
+        <h3 class="dash-panel-title">Derniers agents</h3>
+        <div class="dash-table-wrap">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Service</th>
+                        <th>Poste</th>
+                        <th>Embauche</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var agent in derniersAgents)
+                    {
+                        <tr>
+                            <td>
+                                <div class="dash-agent">
+                                    <span class="dash-avatar">@agent.Initiales</span>
+                                    <span>
+                                        <strong>@agent.NomComplet</strong>
+                                        <small>@agent.Email</small>
+                                    </span>
+                                </div>
+                            </td>
+                            <td>@(agent.Service?.NomService ?? "—")</td>
+                            <td>@(agent.Poste?.NomPoste ?? "—")</td>
+                            <td>@agent.DateEmbauche.ToString("dd/MM/yyyy")</td>
+                            <td><span class="dash-badge @BadgeClass(agent.Statut)">@agent.Statut</span></td>
+                        </tr>
+                    }
+                    @if (!derniersAgents.Any())
+                    {
+                        <tr><td colspan="5" class="dash-empty-cell">Aucun agent.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 
 @code {
-    private int totalAgents = 0;
-    private int agentsActifs = 0;
-    private int agentsEnConge = 0;
-    private int agentsEnMission = 0;
-    private int totalDepartements = 0;
-    private decimal masseSalariale = 0;
+    private int totalAgents;
+    private int agentsActifs;
+    private int agentsEnConge;
+    private int congesEnAttente;
+    private int nbServices;
+    private int agentsAffectes;
+    private string masseSalarialeStr = "0";
+    private string dateDuJour = "";
     private List<Agent> derniersAgents = new();
     private List<Agent> tousAgents = new();
+    private List<DemandeConge> congesEnAttenteList = new();
+
+    private record BarRow(string Nom, int Count, int Pourcent, string Couleur);
+    private record StatutRow(string Label, int Count, int Pourcent, string Couleur);
+
+    private List<BarRow> servicesResume = new();
+    private List<StatutRow> statutsResume = new();
+
+    private static readonly string[] Couleurs = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#f43f5e", "#0ea5e9"];
 
     protected override void OnInitialized()
     {
+        var culture = new System.Globalization.CultureInfo("fr-FR");
+        dateDuJour = DateTime.Now.ToString("dddd dd MMMM yyyy", culture);
+
         tousAgents = AgentService.GetAll();
-
         totalAgents = tousAgents.Count;
-        agentsActifs = tousAgents.Count(a => a.Statut == "Actif");
-        agentsEnConge = tousAgents.Count(a => a.Statut == "En congé");
-        agentsEnMission = tousAgents.Count(a => a.Statut == "En mission");
-        totalDepartements = tousAgents.Select(a => a.Departement).Distinct().Count();
-        masseSalariale = tousAgents.Sum(a => a.Salaire);
+        agentsActifs = tousAgents.Count(a => a.Statut == StatutAgent.Actif);
+        agentsEnConge = tousAgents.Count(a => a.Statut == StatutAgent.EnConge);
+        var toutesLesDemandes = CongeService.GetAllDemandes();
+        congesEnAttente = toutesLesDemandes.Count(d => d.Statut == "attente");
+        congesEnAttenteList = toutesLesDemandes.Where(d => d.Statut == "attente").ToList();
+        nbServices = AgentService.GetServices().Count;
+        agentsAffectes = tousAgents.Count(a => a.IdService > 0);
+
+        var masse = tousAgents.Sum(a => a.Salaire);
+        masseSalarialeStr = masse >= 1_000_000 ? $"{masse / 1_000_000:F1}M" : masse.ToString("N0");
+
         derniersAgents = tousAgents.OrderByDescending(a => a.DateEmbauche).Take(5).ToList();
-    }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
+        var groupes = tousAgents
+            .GroupBy(a => a.Service?.NomService ?? "Non affecté")
+            .OrderByDescending(g => g.Count())
+            .ToList();
+        var maxSvc = groupes.Any() ? groupes.Max(g => g.Count()) : 1;
+        servicesResume = groupes.Select((g, i) => new BarRow(
+            g.Key, g.Count(), (int)((double)g.Count() / maxSvc * 100), Couleurs[i % Couleurs.Length]
+        )).ToList();
+
+        var statutCouleurs = new Dictionary<string, string>
         {
-            // Graphique agents par service
-            var services = tousAgents.GroupBy(a => a.Service?.NomService ?? "Autre")
-                .Select(g => new { Nom = g.Key, Count = g.Count() })
-                .ToList();
-            var labelsServices = services.Select(s => s.Nom).ToArray();
-            var dataServices = services.Select(s => s.Count).ToArray();
-            await JS.InvokeVoidAsync("renderBarChart", "agentsChart", labelsServices, dataServices);
+            [StatutAgent.Actif] = "#3b82f6",
+            [StatutAgent.EnConge] = "#f59e0b",
+            [StatutAgent.Suspendu] = "#ef4444",
+            [StatutAgent.Archive] = "#94a3b8"
+        };
 
-            // Graphique statut
-            var labelsStatut = new[] { "Actif", "En congé", "En mission" };
-            var dataStatut = new[] { agentsActifs, agentsEnConge, agentsEnMission };
-            await JS.InvokeVoidAsync("renderDoughnutChart", "statutChart", labelsStatut, dataStatut);
-        }
+        statutsResume = StatutAgent.All.Select(s =>
+        {
+            var count = tousAgents.Count(a => a.Statut == s);
+            return new StatutRow(s, count,
+                totalAgents > 0 ? Math.Max((int)Math.Round((double)count / totalAgents * 100), count > 0 ? 8 : 0) : 0,
+                statutCouleurs[s]);
+        }).ToList();
     }
 
-    private string GetBadgeClass(string statut) => statut switch
+    private static string BadgeClass(string statut) => statut switch
     {
-        "Actif" => "badge-actif",
-        "En congé" => "badge-conge",
-        "En mission" => "badge-mission",
-        _ => "badge-actif"
+        StatutAgent.Actif => "dash-badge--ok",
+        StatutAgent.EnConge => "dash-badge--warn",
+        StatutAgent.Suspendu => "dash-badge--err",
+        _ => "dash-badge--muted"
     };
 }

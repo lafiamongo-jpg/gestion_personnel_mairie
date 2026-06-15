@@ -9,5 +9,6 @@ namespace GestionPersonnelMairie.Models
         public string NomService { get; set; } = string.Empty;
         public string? Description { get; set; }
         public ICollection<Agent> Agents { get; set; } = new List<Agent>();
+        public ICollection<Poste> Postes { get; set; } = new List<Poste>();
     }
 }

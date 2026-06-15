@@ -45,6 +45,34 @@ td { padding: 12px 16px; font-size: 13px; color: #2C2C2A;
 .badge-amber { background: #FAEEDA; color: #854F0B; }
 .badge-blue { background: #E6F1FB; color: #185FA5; }
 .badge-gray { background: #F1EFE8; color: #5F5E5A; }
+
+/* Évite le conflit avec Bootstrap .badge */
+.statut-pill {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.statut-pill--actif { background: #ecfdf5; color: #065f46; }
+.statut-pill--conge { background: #fffbeb; color: #b45309; }
+.statut-pill--suspendu { background: #fef2f2; color: #991b1b; }
+.statut-pill--archive { background: var(--slate-100); color: var(--slate-500); }
+
+.compte-pill {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+}
+
+.compte-pill--ok      { background: #ecfdf5; color: #065f46; }
+.compte-pill--pending { background: #fff7ed; color: #c2410c; border: 1px dashed #fb923c; }
+.compte-pill--none    { background: #f1f5f9; color: #64748b; }
 .btn-edit {
     background: #E6F1FB; color: #185FA5; border: none;
     border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; margin-right: 6px;

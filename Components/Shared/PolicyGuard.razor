@@ -1,0 +1,60 @@
+@using GestionPersonnelMairie.Core.Constants
+@using GestionPersonnelMairie.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
+
+@if (_checked)
+{
+    @if (_allowed)
+    {
+        @ChildContent
+    }
+    else if (!_authenticated)
+    {
+        <div class="text-center py-5 text-muted">Redirection...</div>
+    }
+    else
+    {
+        <div class="container py-5">
+            <div class="alert alert-warning shadow-sm" style="max-width:520px;margin:0 auto;">
+                <h5 class="alert-heading">⛔ Accès refusé</h5>
+                <p class="mb-0">Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
+                <hr />
+                <button class="btn btn-sm btn-outline-secondary" @onclick='() => Navigation.NavigateTo("/")'>
+                    Retour à l'accueil
+                </button>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public bool RequireSuperAdmin { get; set; }
+    [Parameter] public bool RequireAdmin { get; set; }
+
+    private bool _checked;
+    private bool _allowed;
+    private bool _authenticated;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        _authenticated = state.User.Identity?.IsAuthenticated ?? false;
+
+        if (!_authenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        _allowed = RequireSuperAdmin
+            ? state.User.IsInRole(Roles.SuperAdmin)
+            : RequireAdmin
+                ? state.User.IsInRole(Roles.Admin) || state.User.IsInRole(Roles.SuperAdmin)
+                : true;
+
+        _checked = true;
+    }
+}

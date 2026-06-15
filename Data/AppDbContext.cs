@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using GestionPersonnelMairie.Models;
 
-
 namespace GestionPersonnelMairie.Data
 {
     public class AppDbContext : DbContext
@@ -15,6 +14,8 @@ namespace GestionPersonnelMairie.Data
         public DbSet<Utilisateur> Utilisateurs { get; set; }
         public DbSet<DemandeConge> DemandesConge { get; set; }
         public DbSet<Conge> Conges { get; set; }
+        public DbSet<JournalConnexion> JournauxConnexion { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -28,6 +29,11 @@ namespace GestionPersonnelMairie.Data
                 .WithMany(p => p.Agents)
                 .HasForeignKey(a => a.IdPoste);
 
+            modelBuilder.Entity<Poste>()
+                .HasOne(p => p.Service)
+                .WithMany(s => s.Postes)
+                .HasForeignKey(p => p.IdService);
+
             modelBuilder.Entity<Utilisateur>()
                 .HasOne(u => u.Role)
                 .WithMany(r => r.Utilisateurs)
@@ -36,7 +42,8 @@ namespace GestionPersonnelMairie.Data
             modelBuilder.Entity<Utilisateur>()
                 .HasOne(u => u.Agent)
                 .WithOne(a => a.Utilisateur)
-                .HasForeignKey<Utilisateur>(u => u.IdAgent);
+                .HasForeignKey<Utilisateur>(u => u.IdAgent)
+                .IsRequired(false);
 
             modelBuilder.Entity<DemandeConge>()
                 .HasOne(d => d.Agent)
@@ -47,7 +54,18 @@ namespace GestionPersonnelMairie.Data
                 .HasOne(c => c.DemandeConge)
                 .WithOne(d => d.Conge)
                 .HasForeignKey<Conge>(c => c.IdDemande);
+
+            modelBuilder.Entity<JournalConnexion>()
+                .HasOne(j => j.Utilisateur)
+                .WithMany()
+                .HasForeignKey(j => j.IdUtilisateur)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<AuditLog>()
+                .HasOne(a => a.Utilisateur)
+                .WithMany()
+                .HasForeignKey(a => a.IdUtilisateur)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }
-

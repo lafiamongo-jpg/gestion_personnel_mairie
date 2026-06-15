@@ -1,0 +1,174 @@
+@page "/postes"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using GestionPersonnelMairie.Models
+@using GestionPersonnelMairie.Services
+@inject PosteService PosteService
+@inject AgentService AgentService
+
+<PageTitle>Postes</PageTitle>
+
+<PolicyGuard RequireSuperAdmin="true">
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>💼 Gestion des postes</h2>
+        <button class="btn btn-primary" @onclick="OuvrirModal">➕ Nouveau poste</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Poste</th>
+                    <th>Service</th>
+                    <th>Places</th>
+                    <th>Occupés</th>
+                    <th>Vacants</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in postes)
+                {
+                    <tr>
+                        <td>@p.NomPoste</td>
+                        <td>@(p.Service?.NomService ?? "-")</td>
+                        <td>@p.NbPostes</td>
+                        <td>@p.NbOccupes</td>
+                        <td>
+                            <span class="badge @(p.NbVacants > 0 ? "bg-warning text-dark" : "bg-success")">
+                                @p.NbVacants
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-warning me-1" @onclick="() => Editer(p)">✏️</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DemanderSuppression(p)">🗑️</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (erreur != null) { <div class="alert alert-danger mt-3">@erreur</div> }
+</div>
+
+@if (showModal)
+{
+    <div class="modal fade show d-block" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(posteEdite.IdPoste == 0 ? "Nouveau poste" : "Modifier le poste")</h5>
+                    <button class="btn-close" @onclick="() => showModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nom du poste</label>
+                        <input class="form-control" @bind="posteEdite.NomPoste" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Service</label>
+                        <select class="form-select" @bind="posteEdite.IdService">
+                            <option value="0">-- Choisir --</option>
+                            @foreach (var s in services)
+                            {
+                                <option value="@s.IdService">@s.NomService</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de places</label>
+                        <input type="number" min="1" class="form-control" @bind="posteEdite.NbPostes" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" rows="2" @bind="posteEdite.Description"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => showModal = false">Annuler</button>
+                    <button class="btn btn-primary" @onclick="Sauvegarder">Sauvegarder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+</PolicyGuard>
+
+<ConfirmDialog Visible="showConfirmDelete"
+               Title="Supprimer ce poste ?"
+               Message="@confirmMessage"
+               ConfirmLabel="Supprimer"
+               OnConfirm="ConfirmerSuppression"
+               OnCancel="() => showConfirmDelete = false" />
+
+@code {
+    private List<Poste> postes = new();
+    private List<Service> services = new();
+    private Poste posteEdite = new();
+    private bool showModal;
+    private string? erreur;
+    private bool showConfirmDelete;
+    private int posteASupprimer;
+    private string confirmMessage = "";
+
+    protected override void OnInitialized()
+    {
+        postes = PosteService.GetAll();
+        services = AgentService.GetServices();
+    }
+
+    private void OuvrirModal()
+    {
+        posteEdite = new Poste { NbPostes = 1 };
+        showModal = true;
+    }
+
+    private void Editer(Poste p)
+    {
+        posteEdite = new Poste
+        {
+            IdPoste = p.IdPoste,
+            NomPoste = p.NomPoste,
+            Description = p.Description,
+            IdService = p.IdService,
+            NbPostes = p.NbPostes
+        };
+        showModal = true;
+    }
+
+    private void Sauvegarder()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(posteEdite.NomPoste) || posteEdite.IdService == 0)
+            {
+                erreur = "Nom et service obligatoires.";
+                return;
+            }
+            if (posteEdite.IdPoste == 0)
+                PosteService.Add(posteEdite);
+            else
+                PosteService.Update(posteEdite);
+            postes = PosteService.GetAll();
+            showModal = false;
+            erreur = null;
+        }
+        catch (Exception ex) { erreur = ex.Message; }
+    }
+
+    private void DemanderSuppression(Poste p)
+    {
+        posteASupprimer = p.IdPoste;
+        confirmMessage = $"Supprimer le poste « {p.NomPoste} » ?";
+        showConfirmDelete = true;
+    }
+
+    private void ConfirmerSuppression()
+    {
+        showConfirmDelete = false;
+        try { PosteService.Delete(posteASupprimer); postes = PosteService.GetAll(); erreur = null; }
+        catch (Exception ex) { erreur = ex.Message; }
+    }
+}

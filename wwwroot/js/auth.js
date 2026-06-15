@@ -1,4 +1,4 @@
-// Session persistante via localStorage
+// Session JWT via localStorage
 window.authStorage = {
     save: (key, value) => {
         try { localStorage.setItem(key, value); } catch (e) { }
@@ -11,11 +11,8 @@ window.authStorage = {
     },
     clear: () => {
         try {
-            localStorage.removeItem('auth_email');
-            localStorage.removeItem('auth_nom');
-            localStorage.removeItem('auth_role');
-            localStorage.removeItem('auth_agentId');
-            localStorage.removeItem('auth_userId');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_expires');
         } catch (e) { }
     }
 };

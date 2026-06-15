@@ -1,5 +1,6 @@
 @page "/profil"
 @rendermode InteractiveServer
+@using GestionPersonnelMairie.Core.Constants
 @using GestionPersonnelMairie.Services
 @using GestionPersonnelMairie.Models
 @using Microsoft.AspNetCore.Components.Authorization
@@ -36,7 +37,7 @@
                         📅 Embauché le @agent.DateEmbauche.ToShortDateString()
                     </div>
                     <div class="mt-2">
-                        <span class="badge @(AuthState.EstAdmin ? "bg-danger" : "bg-primary")">
+                        <span class="badge @GetRoleBadge(AuthState.Role)">
                             @AuthState.Role
                         </span>
                         <span class="badge ms-2 @(agent.Statut == "Actif" ? "bg-success" : "bg-warning text-dark")">
@@ -126,4 +127,11 @@
             erreur = ex.Message;
         }
     }
+
+    private static string GetRoleBadge(string? role) => role switch
+    {
+        Core.Constants.Roles.SuperAdmin => "bg-danger",
+        Core.Constants.Roles.Admin => "bg-warning text-dark",
+        _ => "bg-primary"
+    };
 }

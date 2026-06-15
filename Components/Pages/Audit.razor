@@ -1,0 +1,99 @@
+@page "/audit"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using GestionPersonnelMairie.Models
+@using GestionPersonnelMairie.Services
+@inject AuditService AuditService
+
+<PageTitle>Journal d'audit</PageTitle>
+
+<PolicyGuard RequireSuperAdmin="true">
+
+<div class="container-fluid py-4">
+    <h2 class="mb-4">📋 Journal d'audit</h2>
+
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <button class="nav-link @(onglet == "connexions" ? "active" : "")"
+                    @onclick='() => onglet = "connexions"'>Connexions</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(onglet == "actions" ? "active" : "")"
+                    @onclick='() => onglet = "actions"'>Actions</button>
+        </li>
+    </ul>
+
+    @if (onglet == "connexions")
+    {
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date</th>
+                        <th>Email</th>
+                        <th>Résultat</th>
+                        <th>IP</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var j in journaux)
+                    {
+                        <tr>
+                            <td>@j.DateConnexion.ToLocalTime().ToString("g")</td>
+                            <td>@j.Email</td>
+                            <td>
+                                <span class="badge @(j.Reussi ? "bg-success" : "bg-danger")">
+                                    @(j.Reussi ? "OK" : "Échec")
+                                </span>
+                            </td>
+                            <td>@(j.AdresseIp ?? "-")</td>
+                            <td>@(j.Message ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date</th>
+                        <th>Utilisateur</th>
+                        <th>Action</th>
+                        <th>Entité</th>
+                        <th>Détails</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in audits)
+                    {
+                        <tr>
+                            <td>@a.DateAction.ToLocalTime().ToString("g")</td>
+                            <td>@(a.Utilisateur?.Nom ?? "-")</td>
+                            <td>@a.Action</td>
+                            <td>@a.Entite @(a.EntiteId != null ? $"#{a.EntiteId}" : "")</td>
+                            <td>@(a.Details ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+</PolicyGuard>
+
+@code {
+    private string onglet = "connexions";
+    private List<JournalConnexion> journaux = new();
+    private List<AuditLog> audits = new();
+
+    protected override void OnInitialized()
+    {
+        journaux = AuditService.GetJournauxConnexion();
+        audits = AuditService.GetAuditLogs();
+    }
+}

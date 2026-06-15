@@ -9,17 +9,21 @@ namespace GestionPersonnelMairie.Models
         public string Nom { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string MotPasse { get; set; } = string.Empty;
+        public bool EstActif { get; set; } = true;
+        public int TentativesEchouees { get; set; }
+        public DateTime? DateBlocage { get; set; }
 
-        // Réinitialisation mot de passe
         public string? ResetToken { get; set; }
         public DateTime? ResetTokenExpiration { get; set; }
 
-        // Clés étrangères
-        public int IdRole { get; set; }
-        public int IdAgent { get; set; }
+        public bool EmailVerifie { get; set; }
+        public string? TokenVerification { get; set; }
+        public DateTime? TokenVerificationExpiration { get; set; }
 
-        // Navigation
+        public int IdRole { get; set; }
+        public int? IdAgent { get; set; }
+
         public Role Role { get; set; } = null!;
-        public Agent Agent { get; set; } = null!;
+        public Agent? Agent { get; set; }
     }
 }

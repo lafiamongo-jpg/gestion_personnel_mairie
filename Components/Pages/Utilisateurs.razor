@@ -1,13 +1,14 @@
 @page "/utilisateurs"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using GestionPersonnelMairie.Core.Constants
 @using GestionPersonnelMairie.Models
 @using GestionPersonnelMairie.Services
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize(Roles = "Administrateur")]
 @inject UtilisateurService UtilisateurService
 @inject AuthStateService AuthState
 
 <PageTitle>Gestion des Utilisateurs</PageTitle>
+
+<PolicyGuard RequireSuperAdmin="true">
 
 @if (showSucces)
 {
@@ -22,7 +23,10 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>🔐 Gestion des Utilisateurs</h2>
-        <span class="badge bg-secondary">@utilisateurs.Count utilisateur(s)</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary">@utilisateurs.Count utilisateur(s)</span>
+            <button class="btn btn-primary btn-sm" @onclick="OuvrirModalCreer">+ Créer un utilisateur</button>
+        </div>
     </div>
 
     <!-- Filtres -->
@@ -34,8 +38,9 @@
         <div class="col-md-3">
             <select class="form-select" @bind="roleFiltre">
                 <option value="">Tous les rôles</option>
-                <option value="Administrateur">Administrateur</option>
-                <option value="Agent">Agent</option>
+                <option value="@Roles.Agent">Agent</option>
+                <option value="@Roles.Admin">Admin</option>
+                <option value="@Roles.SuperAdmin">SuperAdmin</option>
             </select>
         </div>
     </div>
@@ -49,6 +54,7 @@
                     <th>Email</th>
                     <th>Rôle</th>
                     <th>Agent lié</th>
+                    <th>Statut</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -59,15 +65,44 @@
                         <td>@u.Nom</td>
                         <td>@u.Email</td>
                         <td>
-                            <span class="badge @(u.Role?.NomRole == "Administrateur" ? "bg-danger" : "bg-primary")">
+                            <span class="badge @GetRoleBadge(u.Role?.NomRole)">
                                 @(u.Role?.NomRole ?? "-")
                             </span>
                         </td>
                         <td>@(u.Agent?.NomComplet ?? "-")</td>
                         <td>
+                            @if (u.EmailVerifie)
+                            {
+                                <span class="badge bg-success">Vérifié</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">En attente</span>
+                            }
+                            <span class="badge ms-1 @(u.EstActif ? "bg-success" : "bg-secondary")">
+                                @(u.EstActif ? "Actif" : "Désactivé")
+                            </span>
+                        </td>
+                        <td>
                             <button class="btn btn-sm btn-warning me-1" @onclick="() => OuvrirModal(u)">✏️</button>
+                            @if (!u.EmailVerifie)
+                            {
+                                <button class="btn btn-sm btn-info me-1" title="Renvoyer l'email d'activation"
+                                        @onclick="() => RenvoyerVerification(u)">📧</button>
+                            }
+                            @if (u.EstActif)
+                            {
+                                <button class="btn btn-sm btn-secondary me-1"
+                                        @onclick="() => Desactiver(u.IdUtilisateur)"
+                                        disabled="@(u.IdUtilisateur == AuthState.UtilisateurId)">🔒</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm btn-success me-1"
+                                        @onclick="() => Activer(u.IdUtilisateur)">✅</button>
+                            }
                             <button class="btn btn-sm btn-danger"
-                                    @onclick="() => Supprimer(u.IdUtilisateur)"
+                                    @onclick="() => DemanderSuppression(u)"
                                     disabled="@(u.IdUtilisateur == AuthState.UtilisateurId)">
                                 🗑️
                             </button>
@@ -76,7 +111,7 @@
                 }
                 @if (!utilisateursFiltres.Any())
                 {
-                    <tr><td colspan="5" class="text-center text-muted">Aucun utilisateur trouvé.</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted">Aucun utilisateur trouvé.</td></tr>
                 }
             </tbody>
         </table>
@@ -129,12 +164,109 @@
     </div>
 }
 
+<!-- Modal Créer -->
+@if (showModalCreer)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Créer un compte utilisateur</h5>
+                    <button class="btn-close" @onclick="() => showModalCreer = false"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-3">
+                        <li class="nav-item">
+                            <button type="button" class="nav-link @(modeCreer == "agent" ? "active" : "")"
+                                    @onclick='() => modeCreer = "agent"'>Agent existant</button>
+                        </li>
+                        <li class="nav-item">
+                            <button type="button" class="nav-link @(modeCreer == "admin" ? "active" : "")"
+                                    @onclick="PasserModeAdmin">Admin / SuperAdmin</button>
+                        </li>
+                    </ul>
+
+                    @if (modeCreer == "agent")
+                    {
+                        @if (!agentsSansCompte.Any())
+                        {
+                            <p class="text-muted mb-0">Tous les agents ont déjà un compte.</p>
+                        }
+                        else
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Agent</label>
+                                <select class="form-select" @bind="nouveauAgentId" @bind:after="OnAgentSelectionne">
+                                    <option value="0">-- Choisir un agent --</option>
+                                    @foreach (var a in agentsSansCompte)
+                                    {
+                                        <option value="@a.Id">@a.NomComplet (@a.Email)</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                    }
+
+                    @if (modeCreer == "admin" || (modeCreer == "agent" && agentsSansCompte.Any()))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Nom affiché</label>
+                            <input class="form-control" @bind="nouveauNom" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email de connexion</label>
+                            <input type="email" class="form-control" @bind="nouveauEmail" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Rôle</label>
+                            <select class="form-select" @bind="nouveauRoleId">
+                                @foreach (var r in (modeCreer == "admin"
+                                    ? roles.Where(r => r.NomRole != Roles.Agent)
+                                    : roles))
+                                {
+                                    <option value="@r.IdRole">@r.NomRole — @r.Description</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="alert alert-info py-2" style="font-size:0.82rem;">
+                            Mot de passe initial : <strong>@AppDefaults.MotDePasseInitial</strong><br />
+                            Un email d'activation sera envoyé automatiquement.
+                        </div>
+                    }
+                    @if (erreurCreer != null)
+                    {
+                        <div class="alert alert-danger">@erreurCreer</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => showModalCreer = false">Annuler</button>
+                    @if (modeCreer == "admin" || agentsSansCompte.Any())
+                    {
+                        <button class="btn btn-primary" @onclick="CreerUtilisateur">Créer le compte</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+</PolicyGuard>
+
+<ConfirmDialog Visible="showConfirmDelete"
+               Title="Supprimer cet utilisateur ?"
+               Message="@confirmMessage"
+               ConfirmLabel="Supprimer"
+               OnConfirm="ConfirmerSuppression"
+               OnCancel="() => showConfirmDelete = false" />
+
 @code {
     private List<Utilisateur> utilisateurs = new();
     private List<Role> roles = new();
+    private List<Agent> agentsSansCompte = new();
     private string recherche = "";
     private string roleFiltre = "";
     private bool showModal = false;
+    private bool showModalCreer = false;
     private bool showSucces = false;
     private string succesMsg = "";
     private int editUserId;
@@ -143,6 +275,15 @@
     private int editRoleId;
     private string nouveauMdp = "";
     private string? erreurModal;
+    private int nouveauAgentId;
+    private string nouveauNom = "";
+    private string nouveauEmail = "";
+    private int nouveauRoleId;
+    private string modeCreer = "agent";
+    private string? erreurCreer;
+    private bool showConfirmDelete;
+    private int userASupprimer;
+    private string confirmMessage = "";
 
     private List<Utilisateur> utilisateursFiltres => utilisateurs
         .Where(u =>
@@ -161,6 +302,91 @@
     {
         utilisateurs = UtilisateurService.GetAll();
         roles = UtilisateurService.GetRoles();
+        agentsSansCompte = UtilisateurService.GetAgentsSansCompte();
+    }
+
+    private void OuvrirModalCreer()
+    {
+        erreurCreer = null;
+        modeCreer = "agent";
+        nouveauAgentId = 0;
+        nouveauNom = "";
+        nouveauEmail = "";
+        var roleAgent = roles.FirstOrDefault(r => r.NomRole == Roles.Agent);
+        if (roleAgent != null)
+            nouveauRoleId = roleAgent.IdRole;
+        agentsSansCompte = UtilisateurService.GetAgentsSansCompte();
+        showModalCreer = true;
+    }
+
+    private void PasserModeAdmin()
+    {
+        modeCreer = "admin";
+        nouveauAgentId = 0;
+        var roleAdmin = roles.FirstOrDefault(r => r.NomRole == Roles.Admin);
+        if (roleAdmin != null)
+            nouveauRoleId = roleAdmin.IdRole;
+    }
+
+    private void OnAgentSelectionne()
+    {
+        var agent = agentsSansCompte.FirstOrDefault(a => a.Id == nouveauAgentId);
+        if (agent == null) return;
+        nouveauNom = agent.NomComplet;
+        nouveauEmail = agent.Email;
+    }
+
+    private async Task CreerUtilisateur()
+    {
+        erreurCreer = null;
+
+        if (modeCreer == "agent" && nouveauAgentId == 0)
+        {
+            erreurCreer = "Veuillez sélectionner un agent.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(nouveauNom) || string.IsNullOrWhiteSpace(nouveauEmail))
+        {
+            erreurCreer = "Le nom et l'email sont obligatoires.";
+            return;
+        }
+
+        try
+        {
+            int? idAgent = modeCreer == "agent" ? nouveauAgentId : null;
+            var lien = await UtilisateurService.CreerAsync(nouveauNom, nouveauEmail, nouveauRoleId, idAgent);
+            Charger();
+            showModalCreer = false;
+            succesMsg = $"Compte créé pour {nouveauNom}. Lien d'activation (dev) : {lien}";
+            showSucces = true;
+            StateHasChanged();
+            await Task.Delay(5000);
+            showSucces = false;
+            StateHasChanged();
+        }
+        catch (InvalidOperationException ex)
+        {
+            erreurCreer = ex.Message;
+        }
+    }
+
+    private async Task RenvoyerVerification(Utilisateur u)
+    {
+        try
+        {
+            var lien = await UtilisateurService.RenvoyerVerificationAsync(u.IdUtilisateur);
+            succesMsg = $"Email renvoyé à {u.Email}. Lien (dev) : {lien}";
+            showSucces = true;
+            StateHasChanged();
+            await Task.Delay(5000);
+            showSucces = false;
+            StateHasChanged();
+        }
+        catch (InvalidOperationException ex)
+        {
+            succesMsg = ex.Message;
+            showSucces = true;
+        }
     }
 
     private void OuvrirModal(Utilisateur u)
@@ -197,9 +423,17 @@
         StateHasChanged();
     }
 
-    private async void Supprimer(int id)
+    private void DemanderSuppression(Utilisateur u)
     {
-        UtilisateurService.Delete(id);
+        userASupprimer = u.IdUtilisateur;
+        confirmMessage = $"Supprimer définitivement le compte de {u.Nom} ({u.Email}) ?";
+        showConfirmDelete = true;
+    }
+
+    private async Task ConfirmerSuppression()
+    {
+        showConfirmDelete = false;
+        UtilisateurService.Delete(userASupprimer);
         Charger();
         succesMsg = "Utilisateur supprimé.";
         showSucces = true;
@@ -208,4 +442,27 @@
         showSucces = false;
         StateHasChanged();
     }
+
+    private void Desactiver(int id)
+    {
+        UtilisateurService.Desactiver(id);
+        Charger();
+        succesMsg = "Compte désactivé.";
+        showSucces = true;
+    }
+
+    private void Activer(int id)
+    {
+        UtilisateurService.Activer(id);
+        Charger();
+        succesMsg = "Compte réactivé.";
+        showSucces = true;
+    }
+
+    private static string GetRoleBadge(string? role) => role switch
+    {
+        Roles.SuperAdmin => "bg-danger",
+        Roles.Admin => "bg-warning text-dark",
+        _ => "bg-primary"
+    };
 }

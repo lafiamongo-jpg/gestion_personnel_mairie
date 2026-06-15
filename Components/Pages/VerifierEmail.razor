@@ -1,0 +1,65 @@
+@page "/verifier-email"
+@layout EmptyLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using GestionPersonnelMairie.Services
+@inject UtilisateurService UtilisateurService
+
+<PageTitle>Vérification du compte</PageTitle>
+
+<div class="d-flex justify-content-center align-items-center"
+     style="min-height:100vh;background:url('/images/mairie-banikoara.png') center/cover no-repeat;position:relative;">
+    <div style="position:absolute;inset:0;background:rgba(10,22,40,0.6);"></div>
+    <div class="card shadow" style="max-width:460px;width:100%;position:relative;z-index:1;border-radius:16px;border:none;">
+        <div class="card-body p-4 text-center">
+            @if (etat == "chargement")
+            {
+                <div class="py-3">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <p class="text-muted">Vérification en cours...</p>
+                </div>
+            }
+            else if (etat == "ok")
+            {
+                <div style="font-size:2.5rem;margin-bottom:0.75rem;">✅</div>
+                <h4 style="color:#0f2137;font-weight:700;">Compte activé !</h4>
+                <p class="text-muted mt-2">
+                    Votre adresse email a été vérifiée.<br />
+                    Connectez-vous avec le mot de passe temporaire <strong>12345</strong>,<br />
+                    puis modifiez-le dans <em>Mon profil</em>.
+                </p>
+                <a class="btn btn-primary mt-3 px-4" href="/login">Se connecter</a>
+            }
+            else
+            {
+                <div style="font-size:2.5rem;margin-bottom:0.75rem;">❌</div>
+                <h4 style="color:#dc2626;font-weight:700;">Lien invalide ou expiré</h4>
+                <p class="text-muted mt-2">
+                    Ce lien de vérification est incorrect ou a expiré.<br />
+                    Contactez l'administrateur pour recevoir un nouveau lien.
+                </p>
+                <a class="btn btn-outline-secondary mt-3" href="/login">Retour à la connexion</a>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Token { get; set; }
+
+    private string etat = "chargement";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Token))
+        {
+            etat = "error";
+            return;
+        }
+
+        // Petit délai pour que l'UI affiche "Vérification..."
+        await Task.Delay(500);
+
+        etat = UtilisateurService.VerifierEmail(Token) ? "ok" : "error";
+    }
+}

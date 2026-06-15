@@ -1,0 +1,31 @@
+@using GestionPersonnelMairie.Services
+@inject AuthStateService AuthState
+
+<div class="bientot-page">
+    <div class="bientot-card">
+        <div class="bientot-icon">@Icon</div>
+        <h2>@Titre</h2>
+        <p class="bientot-desc">@Description</p>
+        <span class="bientot-badge">🚧 Module en cours de développement</span>
+        <p class="bientot-note">Cette fonctionnalité sera disponible dans une prochaine version du système.</p>
+        <button class="btn btn-primary btn-sm mt-3" @onclick="Retour">← Retour à l'accueil</button>
+    </div>
+</div>
+
+<style>
+    .bientot-page { display:flex; align-items:center; justify-content:center; min-height:60vh; }
+    .bientot-card { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:48px 40px; text-align:center; max-width:480px; box-shadow:0 4px 24px rgba(15,28,53,.06); }
+    .bientot-icon { font-size:3rem; margin-bottom:16px; }
+    .bientot-card h2 { font-size:1.4rem; font-weight:700; color:#0f1c35; margin-bottom:10px; }
+    .bientot-desc { color:#64748b; font-size:.9rem; line-height:1.6; margin-bottom:20px; }
+    .bientot-badge { display:inline-block; background:#fffbeb; color:#b45309; font-size:.78rem; font-weight:600; padding:6px 14px; border-radius:20px; border:1px solid #fde68a; }
+    .bientot-note { font-size:.78rem; color:#94a3b8; margin-top:14px; }
+</style>
+
+@code {
+    [Parameter] public string Titre { get; set; } = "Module";
+    [Parameter] public string Description { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = "📋";
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    private void Retour() => Navigation.NavigateTo("/");
+}

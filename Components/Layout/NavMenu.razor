@@ -4,7 +4,10 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">🏛️ Mairie de Banikoara</a>
+        <a class="navbar-brand" href="">
+            <span class="brand-icon">🏛</span>
+            <span class="brand-text">Mairie de Banikoara</span>
+        </a>
         <button class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -26,9 +29,9 @@
             </NavLink>
         </div>
 
-        @if (AuthState.EstAdmin)
+        @if (AuthState.PeutGererAgents)
         {
-            <div class="nav-section-label px-3 mt-2">ADMINISTRATION</div>
+            <div class="nav-section-label px-3 mt-2">SUPER ADMIN</div>
 
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="agents">
@@ -37,8 +40,31 @@
             </div>
 
             <div class="nav-item px-3">
+                <NavLink class="nav-link" href="postes">
+                    <span class="bi bi-briefcase-fill" aria-hidden="true"></span> Postes
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
                 <NavLink class="nav-link" href="utilisateurs">
                     <span class="bi bi-person-badge-fill" aria-hidden="true"></span> Utilisateurs
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="audit">
+                    <span class="bi bi-journal-text" aria-hidden="true"></span> Audit
+                </NavLink>
+            </div>
+        }
+
+        @if (AuthState.PeutGererServices)
+        {
+            <div class="nav-section-label px-3 mt-2">ADMINISTRATION</div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="services">
+                    <span class="bi bi-building-fill" aria-hidden="true"></span> Services
                 </NavLink>
             </div>
         }
@@ -54,22 +80,18 @@
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="paie">
                 <span class="bi bi-cash-coin" aria-hidden="true"></span> Paie
+                <span class="nav-soon">bientôt</span>
             </NavLink>
         </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="evaluations">
-                <span class="bi bi-star-fill" aria-hidden="true"></span> Évaluations
-            </NavLink>
-        </div>
-
-        <div class="nav-section-label px-3 mt-2">OUTILS</div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="rapports">
                 <span class="bi bi-file-earmark-bar-graph-fill" aria-hidden="true"></span> Rapports
+                <span class="nav-soon">bientôt</span>
             </NavLink>
         </div>
+
+        <div class="nav-section-label px-3 mt-2">COMPTE</div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="profil">

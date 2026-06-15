@@ -1,259 +1,176 @@
 @page "/login"
 @layout EmptyLayout
 @rendermode InteractiveServer
+@using GestionPersonnelMairie.Core.Constants
 @using GestionPersonnelMairie.Services
 @inject AuthService AuthService
 @inject CustomAuthStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 
-<PageTitle>Connexion</PageTitle>
+<PageTitle>Connexion — Mairie de Banikoara</PageTitle>
 
-<style>
-    body { background: linear-gradient(to right, #1e1e2f, #5a2a82); }
-    .box {
-        background: white; padding: 30px; border-radius: 10px;
-        width: 100%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    }
-    .btn-purple { background: #6a0dad; color: white; border: none; }
-    .btn-purple:hover:not(:disabled) { background: #5a0b9d; color: white; }
-    .btn-purple:disabled { background: #b39ddb; color: white; cursor: not-allowed; }
-    .btn-orange { background: orange; color: white; border: none; }
-    .btn-orange:hover:not(:disabled) { background: darkorange; color: white; }
-    .btn-orange:disabled { background: #ffd080; color: white; cursor: not-allowed; }
-    .password-box { position: relative; }
-    .eye { position: absolute; right: 10px; top: 8px; cursor: pointer; user-select: none; }
-    .otp-inputs { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
-    .otp-inputs input {
-        width: 45px; height: 50px; text-align: center;
-        font-size: 1.4rem; font-weight: bold;
-        border: 2px solid #dee2e6; border-radius: 8px; outline: none;
-    }
-    .otp-inputs input:focus { border-color: #6a0dad; box-shadow: 0 0 0 3px rgba(106,13,173,0.15); }
-    .step-indicator { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 16px; }
-    .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #dee2e6; }
-    .step-dot.active { background: #6a0dad; }
-</style>
+<div id="login-screen"
+     style="min-height:100vh;position:relative;display:flex !important;align-items:center !important;justify-content:center !important;
+            background:url('/images/mairie-banikoara.png') center/cover no-repeat;padding:2rem;box-sizing:border-box;">
 
-<div class="d-flex justify-content-center align-items-center" style="min-height:100vh;">
-    <div class="box">
+    <!-- Overlay sur toute la page -->
+    <div style="position:absolute;inset:0;z-index:0;
+                background:linear-gradient(105deg,rgba(10,22,40,0.75) 0%,rgba(10,22,40,0.45) 50%,rgba(10,22,40,0.35) 100%),
+                           linear-gradient(to top,rgba(10,22,40,0.6) 0%,transparent 45%);"
+         aria-hidden="true"></div>
 
-        @* ─── CONNEXION ─── *@
-        @if (mode == "login")
-        {
-            <h3 class="text-center mb-3">Connexion</h3>
+    <!-- Texte institutionnel en bas à gauche -->
+    <div style="position:absolute;bottom:0;left:0;z-index:1;padding:2.5rem 3rem;color:#fff;max-width:480px;">
+        <div style="font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;color:#dbb84a;margin-bottom:0.6rem;font-weight:600;">
+            République du Bénin
+        </div>
+        <h1 style="font-family:'Instrument Serif',Georgia,serif;font-size:2.2rem;font-weight:400;line-height:1.1;margin-bottom:0.5rem;">
+            Commune de Banikoara
+        </h1>
+        <p style="color:rgba(255,255,255,0.8);font-size:0.88rem;line-height:1.5;margin:0;">
+            Système de gestion automatisée du personnel municipal.
+        </p>
+    </div>
 
-            <input class="form-control mt-3" placeholder="Email"
-                   @bind="email" @bind:event="oninput" />
+    <!-- Carte blanche centrée -->
+    <div style="position:relative;z-index:2;width:100%;max-width:420px;
+                background:rgba(245, 242, 235, 0.92);
+                backdrop-filter:blur(12px);
+                border-radius:16px;padding:2rem;
+                box-shadow:0 16px 48px rgba(10,22,40,0.22);
+                border:1px solid rgba(255,255,255,0.45);">
 
-            <div class="password-box mt-2">
-                <input type="@(showPassword ? "text" : "password")"
-                       class="form-control" placeholder="Mot de passe"
-                       @bind="motPasse" />
-                <span class="eye" @onclick="TogglePassword">👁️</span>
-            </div>
-
-            <div class="text-end mt-1">
-                <a href="#" @onclick="GoForgot" @onclick:preventDefault>Mot de passe oublié ?</a>
-            </div>
-
-            <button class="btn btn-purple w-100 mt-3" @onclick="SeConnecter" disabled="@chargement">
-                @(chargement ? "⏳ Connexion..." : "Se connecter")
-            </button>
-
-            <p class="text-center mt-2 mb-0">
-                Pas encore de compte ?
-                <a href="#" @onclick="GoRegister" @onclick:preventDefault>S'inscrire</a>
-            </p>
-        }
-
-        @* ─── INSCRIPTION ─── *@
-        @if (mode == "register")
-        {
-            <h3 class="text-center mb-3">Inscription</h3>
-            <p class="text-muted text-center" style="font-size:0.88rem;">
-                Votre email doit correspondre à un agent enregistré dans le système.
-            </p>
-
-            <input class="form-control mt-3" placeholder="Nom complet" @bind="nom" />
-
-            <input class="form-control mt-2" placeholder="Email"
-                   @bind="email" @bind:event="oninput" />
-
-            <div class="password-box mt-2">
-                <input type="@(showPassword ? "text" : "password")"
-                       class="form-control" placeholder="Mot de passe (min. 6 caractères)"
-                       @bind="motPasse" />
-                <span class="eye" @onclick="TogglePassword">👁️</span>
-            </div>
-
-            <div class="password-box mt-2">
-                <input type="@(showPassword ? "text" : "password")"
-                       class="form-control" placeholder="Confirmer le mot de passe"
-                       @bind="confirmerMotPasse" />
-            </div>
-
-            @if (!string.IsNullOrEmpty(motPasse))
+            @if (mode == "login")
             {
-                <div class="mt-1" style="font-size:0.8rem;">
-                    <span class="@(motPasse.Length >= 6 ? "text-success" : "text-danger")">
-                        @(motPasse.Length >= 6 ? "✅" : "❌") Minimum 6 caractères
-                    </span><br />
-                    <span class="@(motPasse == confirmerMotPasse && !string.IsNullOrEmpty(confirmerMotPasse) ? "text-success" : "text-danger")">
-                        @(motPasse == confirmerMotPasse && !string.IsNullOrEmpty(confirmerMotPasse) ? "✅" : "❌") Les mots de passe correspondent
-                    </span>
+                <h2 style="font-size:1.45rem;font-weight:700;color:#0f2137;margin-bottom:0.2rem;">Connexion</h2>
+                <p style="color:#64748b;font-size:0.88rem;margin-bottom:1.5rem;">Mairie de Banikoara — Gestion du personnel</p>
+
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Email</label>
+                    <input class="form-control" placeholder="votre.email@exemple.bj"
+                           @bind="email" @bind:event="oninput" />
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label small text-muted">Mot de passe</label>
+                    <div style="position:relative;">
+                        <input type="@(showPassword ? "text" : "password")"
+                               class="form-control" placeholder="••••••••"
+                               @bind="motPasse" style="padding-right:4.5rem;" />
+                        <button type="button" @onclick="TogglePassword"
+                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);
+                                       background:none;border:none;color:#94a3b8;font-size:0.78rem;cursor:pointer;">
+                            @(showPassword ? "Masquer" : "Afficher")
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-end mb-4">
+                    <a href="#" class="small" style="color:#1a3a6b;" @onclick="GoForgot" @onclick:preventDefault>Mot de passe oublié ?</a>
+                </div>
+
+                <p style="font-size:0.8rem;font-weight:600;color:#475569;margin-bottom:0.65rem;">Se connecter en tant que</p>
+                <div style="display:flex;flex-direction:column;gap:0.55rem;">
+                    <button type="button"
+                            style="width:100%;padding:0.78rem 1rem;border:none;border-radius:8px;font-weight:600;
+                                   font-size:0.86rem;cursor:pointer;color:#fff;background:#1a3a6b;"
+                            @onclick='() => SeConnecter(Roles.Agent)' disabled="@chargement">
+                        @(chargementRole == Roles.Agent ? "Connexion..." : "Se connecter en tant qu'Agent")
+                    </button>
+                    <button type="button"
+                            style="width:100%;padding:0.78rem 1rem;border:none;border-radius:8px;font-weight:600;
+                                   font-size:0.86rem;cursor:pointer;color:#fff;background:#9a7b1a;"
+                            @onclick='() => SeConnecter(Roles.Admin)' disabled="@chargement">
+                        @(chargementRole == Roles.Admin ? "Connexion..." : "Se connecter en tant qu'Administrateur")
+                    </button>
+                    <button type="button"
+                            style="width:100%;padding:0.78rem 1rem;border:none;border-radius:8px;font-weight:600;
+                                   font-size:0.86rem;cursor:pointer;color:#fff;background:#0a1628;"
+                            @onclick='() => SeConnecter(Roles.SuperAdmin)' disabled="@chargement">
+                        @(chargementRole == Roles.SuperAdmin ? "Connexion..." : "Se connecter en tant que Super Administrateur")
+                    </button>
+                </div>
+
+                <div style="margin-top:1.2rem;padding:0.75rem 0.9rem;background:rgba(230,236,228,0.7);
+                            border-left:3px solid #c9a227;border-radius:0 8px 8px 0;
+                            font-size:0.78rem;color:#475569;line-height:1.5;">
+                    Compte créé par le Super Admin. Activez-le via l'email reçu,
+                    connectez-vous avec <strong>@AppDefaults.MotDePasseInitial</strong>,
+                    puis modifiez votre mot de passe dans <em>Mon profil</em>.
                 </div>
             }
 
-            <button class="btn btn-orange w-100 mt-3"
-                    @onclick="SInscrire"
-                    disabled="@chargementRegister">
-                @(chargementRegister ? "⏳ Inscription..." : "S'inscrire")
-            </button>
-
-            <p class="text-center mt-2 mb-0">
-                Déjà un compte ?
-                <a href="#" @onclick="GoLogin" @onclick:preventDefault>Se connecter</a>
-            </p>
-        }
-
-        @* ─── ÉTAPE 1 : SAISIE EMAIL ─── *@
-        @if (mode == "forgot")
-        {
-            <div class="step-indicator">
-                <div class="step-dot active"></div>
-                <div class="step-dot"></div>
-                <div class="step-dot"></div>
-            </div>
-
-            <h3 class="text-center">Mot de passe oublié</h3>
-            <p class="text-muted text-center" style="font-size:0.88rem;">
-                Entrez votre email pour recevoir un code de vérification.
-            </p>
-
-            <input class="form-control mt-3" placeholder="Votre email"
-                   @bind="email" @bind:event="oninput" />
-
-            <button class="btn btn-purple w-100 mt-3"
-                    @onclick="EnvoyerCode" disabled="@chargementForgot">
-                @(chargementForgot ? "⏳ Envoi du code..." : "Envoyer le code")
-            </button>
-
-            <p class="text-center mt-2 mb-0">
-                <a href="#" @onclick="GoLogin" @onclick:preventDefault>← Retour à la connexion</a>
-            </p>
-        }
-
-        @* ─── ÉTAPE 2 : CODE OTP ─── *@
-        @if (mode == "verify")
-        {
-            <div class="step-indicator">
-                <div class="step-dot"></div>
-                <div class="step-dot active"></div>
-                <div class="step-dot"></div>
-            </div>
-
-            <h3 class="text-center">Vérification</h3>
-            <p class="text-muted text-center" style="font-size:0.88rem;">
-                Saisissez le code à 6 chiffres.<br />
-                <strong>Code (démo) : @codeDemo</strong>
-            </p>
-
-            <div class="otp-inputs">
-                <input maxlength="1" @bind="otp1" @oninput="@(e => OtpSaisi(e, 1))" />
-                <input maxlength="1" @bind="otp2" @oninput="@(e => OtpSaisi(e, 2))" />
-                <input maxlength="1" @bind="otp3" @oninput="@(e => OtpSaisi(e, 3))" />
-                <input maxlength="1" @bind="otp4" @oninput="@(e => OtpSaisi(e, 4))" />
-                <input maxlength="1" @bind="otp5" @oninput="@(e => OtpSaisi(e, 5))" />
-                <input maxlength="1" @bind="otp6" @oninput="@(e => OtpSaisi(e, 6))" />
-            </div>
-
-            <button class="btn btn-purple w-100 mt-3" @onclick="ValiderCode">
-                Vérifier le code
-            </button>
-
-            <p class="text-center mt-2 mb-0">
-                <a href="#" @onclick="GoForgot" @onclick:preventDefault>← Changer d'email</a>
-            </p>
-        }
-
-        @* ─── ÉTAPE 3 : NOUVEAU MOT DE PASSE ─── *@
-        @if (mode == "reset")
-        {
-            <div class="step-indicator">
-                <div class="step-dot"></div>
-                <div class="step-dot"></div>
-                <div class="step-dot active"></div>
-            </div>
-
-            <h3 class="text-center">Nouveau mot de passe</h3>
-
-            <div class="password-box mt-3">
-                <input type="@(showPassword ? "text" : "password")"
-                       class="form-control" placeholder="Nouveau mot de passe"
-                       @bind="nouveauMotPasse" />
-                <span class="eye" @onclick="TogglePassword">👁️</span>
-            </div>
-
-            <div class="password-box mt-2">
-                <input type="@(showPassword ? "text" : "password")"
-                       class="form-control" placeholder="Confirmer le mot de passe"
-                       @bind="confirmerMotPasse" />
-            </div>
-
-            @if (!string.IsNullOrEmpty(nouveauMotPasse))
+            @if (mode == "forgot")
             {
-                <div class="mt-1" style="font-size:0.8rem;">
-                    <span class="@(nouveauMotPasse.Length >= 6 ? "text-success" : "text-danger")">
-                        @(nouveauMotPasse.Length >= 6 ? "✅" : "❌") Minimum 6 caractères
-                    </span><br />
-                    <span class="@(nouveauMotPasse == confirmerMotPasse && !string.IsNullOrEmpty(confirmerMotPasse) ? "text-success" : "text-danger")">
-                        @(nouveauMotPasse == confirmerMotPasse && !string.IsNullOrEmpty(confirmerMotPasse) ? "✅" : "❌") Les mots de passe correspondent
-                    </span>
-                </div>
+                <button type="button" style="background:none;border:none;color:#64748b;font-size:0.82rem;padding:0;margin-bottom:1rem;cursor:pointer;"
+                        @onclick="GoLogin">← Retour</button>
+                <h2 style="font-size:1.45rem;font-weight:700;color:#0f2137;">Mot de passe oublié</h2>
+                <p style="color:#64748b;font-size:0.88rem;margin-bottom:1rem;">Entrez votre email pour recevoir un code.</p>
+                <input class="form-control" placeholder="Votre email" @bind="email" @bind:event="oninput" />
+                <button class="btn btn-primary w-100 mt-3" @onclick="EnvoyerCode" disabled="@chargementForgot">
+                    @(chargementForgot ? "Envoi..." : "Envoyer le code")
+                </button>
             }
 
-            <button class="btn btn-purple w-100 mt-3"
-                    @onclick="ConfirmerReinitialisation"
-                    disabled="@(!PeutSauvegarder())">
-                Enregistrer le mot de passe
-            </button>
-        }
+            @if (mode == "verify")
+            {
+                <button type="button" style="background:none;border:none;color:#64748b;font-size:0.82rem;padding:0;margin-bottom:1rem;cursor:pointer;"
+                        @onclick="GoForgot">← Changer d'email</button>
+                <h2 style="font-size:1.45rem;font-weight:700;color:#0f2137;">Vérification</h2>
+                <p style="color:#64748b;font-size:0.88rem;">
+                    Saisissez le code à 6 chiffres.<br /><strong>Code (démo) : @codeDemo</strong>
+                </p>
+                <div style="display:flex;gap:8px;justify-content:center;margin:1rem 0;">
+                    <input maxlength="1" class="form-control text-center" style="width:42px;" @bind="otp1" @oninput="@(e => OtpSaisi(e, 1))" />
+                    <input maxlength="1" class="form-control text-center" style="width:42px;" @bind="otp2" @oninput="@(e => OtpSaisi(e, 2))" />
+                    <input maxlength="1" class="form-control text-center" style="width:42px;" @bind="otp3" @oninput="@(e => OtpSaisi(e, 3))" />
+                    <input maxlength="1" class="form-control text-center" style="width:42px;" @bind="otp4" @oninput="@(e => OtpSaisi(e, 4))" />
+                    <input maxlength="1" class="form-control text-center" style="width:42px;" @bind="otp5" @oninput="@(e => OtpSaisi(e, 5))" />
+                    <input maxlength="1" class="form-control text-center" style="width:42px;" @bind="otp6" @oninput="@(e => OtpSaisi(e, 6))" />
+                </div>
+                <button class="btn btn-primary w-100" @onclick="ValiderCode">Vérifier le code</button>
+            }
 
-        @* ─── MESSAGES ─── *@
-        @if (erreur != null)
-        {
-            <div class="alert alert-danger mt-3 mb-0">@erreur</div>
-        }
-        @if (succes != null)
-        {
-            <div class="alert alert-success mt-3 mb-0">@succes</div>
-        }
+            @if (mode == "reset")
+            {
+                <h2 style="font-size:1.45rem;font-weight:700;color:#0f2137;">Nouveau mot de passe</h2>
+                <input type="password" class="form-control mt-3" placeholder="Nouveau mot de passe" @bind="nouveauMotPasse" />
+                <input type="password" class="form-control mt-2" placeholder="Confirmer" @bind="confirmerMotPasse" />
+                <button class="btn btn-primary w-100 mt-3" @onclick="ConfirmerReinitialisation"
+                        disabled="@(!PeutSauvegarder())">Enregistrer</button>
+            }
 
+            @if (erreur != null)
+            {
+                <div class="alert alert-danger mt-3 mb-0 py-2" style="font-size:0.85rem;">@erreur</div>
+            }
+            @if (succes != null)
+            {
+                <div class="alert alert-success mt-3 mb-0 py-2" style="font-size:0.85rem;">@succes</div>
+            }
     </div>
 </div>
 
 @code {
     private string email = "";
     private string motPasse = "";
-    private string nom = "";
     private string confirmerMotPasse = "";
     private string nouveauMotPasse = "";
     private string otp1 = "", otp2 = "", otp3 = "", otp4 = "", otp5 = "", otp6 = "";
     private string codeDemo = "";
 
-    private string? erreur = null;
-    private string? succes = null;
-    private bool chargement = false;
-    private bool chargementRegister = false;
-    private bool chargementForgot = false;
-    private bool showPassword = false;
+    private string? erreur;
+    private string? succes;
+    private bool chargement;
+    private string? chargementRole;
+    private bool chargementForgot;
+    private bool showPassword;
     private string mode = "login";
 
-    // ─── Navigation ──────────────────────────────────────────
     private void TogglePassword() => showPassword = !showPassword;
-    private void GoRegister() { mode = "register"; Reset(); }
-    private void GoLogin()    { mode = "login";    Reset(); }
-    private void GoForgot()   { mode = "forgot";   Reset(); }
+
+    private void GoLogin() { mode = "login"; Reset(); }
+    private void GoForgot() { mode = "forgot"; Reset(); }
 
     private void Reset()
     {
@@ -262,159 +179,89 @@
         otp1 = otp2 = otp3 = otp4 = otp5 = otp6 = "";
     }
 
-    // ─── Connexion ───────────────────────────────────────────
-    private async Task SeConnecter()
+    private async Task SeConnecter(string role)
     {
         erreur = null; succes = null;
 
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(motPasse))
         {
-            erreur = "Veuillez remplir tous les champs.";
+            erreur = "Veuillez saisir votre email et votre mot de passe.";
             return;
         }
 
         chargement = true;
+        chargementRole = role;
         try
         {
-            var utilisateur = AuthService.Login(email, motPasse);
-            if (utilisateur == null)
+            var result = AuthService.Login(email, motPasse);
+            var roleCompte = result.Utilisateur.Role?.NomRole ?? "";
+
+            if (roleCompte != role)
             {
-                erreur = "Email ou mot de passe incorrect.";
-                chargement = false;
+                erreur = $"Ce compte n'est pas un compte {GetRoleLabel(role)}. Rôle attribué : {GetRoleLabel(roleCompte)}.";
                 return;
             }
-            await AuthStateProvider.LoginAsync(
-                utilisateur.Email,
-                utilisateur.Nom,
-                utilisateur.Role?.NomRole ?? "Agent",
-                utilisateur.IdAgent,
-                utilisateur.IdUtilisateur
-            );
+
+            await AuthStateProvider.LoginWithResultAsync(result);
             Navigation.NavigateTo("/");
         }
+        catch (UnauthorizedAccessException ex) { erreur = ex.Message; }
         catch (Exception ex) { erreur = "Erreur : " + ex.Message; }
-        chargement = false;
+        finally { chargement = false; chargementRole = null; }
     }
 
-    // ─── Inscription ─────────────────────────────────────────
-    private async Task SInscrire()
-    {
-        erreur = null; succes = null;
-
-        if (string.IsNullOrWhiteSpace(nom))
-        {
-            erreur = "Veuillez entrer votre nom complet.";
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            erreur = "Veuillez entrer votre email.";
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(motPasse) || motPasse.Length < 6)
-        {
-            erreur = "Le mot de passe doit contenir au moins 6 caractères.";
-            return;
-        }
-        if (motPasse != confirmerMotPasse)
-        {
-            erreur = "Les mots de passe ne correspondent pas.";
-            return;
-        }
-
-        chargementRegister = true;
-        try
-        {
-            AuthService.Inscrire(nom, email, motPasse);
-            succes = "✅ Compte créé avec succès ! Redirection vers la connexion...";
-            await Task.Delay(2000);
-            GoLogin();
-            StateHasChanged();
-        }
-        catch (Exception ex) { erreur = ex.Message; }
-        chargementRegister = false;
-    }
-
-    // ─── Mot de passe oublié : Étape 1 ───────────────────────
     private async Task EnvoyerCode()
     {
         erreur = null; succes = null;
-
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            erreur = "Veuillez entrer votre adresse email.";
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(email)) { erreur = "Veuillez entrer votre adresse email."; return; }
 
         chargementForgot = true;
         try
         {
-            var existe = AuthService.EmailExiste(email);
-            if (!existe)
-            {
-                succes = "Si cet email est enregistré, un code a été généré.";
-                chargementForgot = false;
-                return;
-            }
-            var token = await AuthService.GenererTokenReinitialisationAsync(email);
-            codeDemo = token; // ⚠️ À retirer en production
+            if (!AuthService.EmailExiste(email)) { succes = "Si cet email est enregistré, un code a été généré."; return; }
+            codeDemo = await AuthService.GenererTokenReinitialisationAsync(email);
             mode = "verify";
-            succes = "✅ Code généré. Saisissez-le ci-dessous.";
+            succes = "Code généré. Saisissez-le ci-dessous.";
         }
         catch (Exception ex) { erreur = "Erreur : " + ex.Message; }
-        chargementForgot = false;
+        finally { chargementForgot = false; }
     }
 
-    // ─── Mot de passe oublié : Étape 2 ───────────────────────
     private void OtpSaisi(ChangeEventArgs e, int index)
     {
-        var valeur = e.Value?.ToString() ?? "";
-        switch (index)
-        {
-            case 1: otp1 = valeur; break;
-            case 2: otp2 = valeur; break;
-            case 3: otp3 = valeur; break;
-            case 4: otp4 = valeur; break;
-            case 5: otp5 = valeur; break;
-            case 6: otp6 = valeur; break;
-        }
+        var v = e.Value?.ToString() ?? "";
+        switch (index) { case 1: otp1 = v; break; case 2: otp2 = v; break; case 3: otp3 = v; break;
+            case 4: otp4 = v; break; case 5: otp5 = v; break; case 6: otp6 = v; break; }
     }
 
     private void ValiderCode()
     {
         erreur = null; succes = null;
-        var codeSaisi = otp1 + otp2 + otp3 + otp4 + otp5 + otp6;
-
-        if (codeSaisi.Length < 6)
-        {
-            erreur = "Veuillez saisir les 6 chiffres du code.";
-            return;
-        }
-        if (!AuthService.ValiderToken(email, codeSaisi))
-        {
-            erreur = "Code incorrect ou expiré.";
-            return;
-        }
+        var code = otp1 + otp2 + otp3 + otp4 + otp5 + otp6;
+        if (code.Length < 6) { erreur = "Veuillez saisir les 6 chiffres."; return; }
+        if (!AuthService.ValiderToken(email, code)) { erreur = "Code incorrect ou expiré."; return; }
         mode = "reset";
     }
 
-    // ─── Mot de passe oublié : Étape 3 ───────────────────────
-    private bool PeutSauvegarder() =>
-        nouveauMotPasse.Length >= 6 && nouveauMotPasse == confirmerMotPasse;
+    private bool PeutSauvegarder() => nouveauMotPasse.Length >= 6 && nouveauMotPasse == confirmerMotPasse;
 
     private void ConfirmerReinitialisation()
     {
         erreur = null; succes = null;
-
         if (!PeutSauvegarder()) { erreur = "Vérifiez les conditions du mot de passe."; return; }
-
         try
         {
             AuthService.ReinitialisMotDePasse(email, nouveauMotPasse);
-            succes = "✅ Mot de passe mis à jour ! Redirection...";
-            Task.Delay(2000).ContinueWith(_ =>
-                InvokeAsync(() => { GoLogin(); StateHasChanged(); }));
+            succes = "Mot de passe mis à jour ! Redirection...";
+            Task.Delay(2000).ContinueWith(_ => InvokeAsync(() => { GoLogin(); StateHasChanged(); }));
         }
         catch (Exception ex) { erreur = "Erreur : " + ex.Message; }
     }
+
+    private static string GetRoleLabel(string role) => role switch
+    {
+        Roles.Admin => "Administrateur",
+        Roles.SuperAdmin => "Super Administrateur",
+        _ => "Agent"
+    };
 }

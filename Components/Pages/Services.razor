@@ -1,0 +1,135 @@
+@page "/services"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using GestionPersonnelMairie.Models
+@using GestionPersonnelMairie.Services
+@inject ServiceService ServiceService
+@inject AgentService AgentService
+
+<PageTitle>Services municipaux</PageTitle>
+
+<PolicyGuard RequireAdmin="true">
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🏢 Services municipaux</h2>
+        <button class="btn btn-primary" @onclick="OuvrirModal">➕ Nouveau service</button>
+    </div>
+
+    <div class="row g-3">
+        @foreach (var service in services)
+        {
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">@service.NomService</h5>
+                        <p class="text-muted small">@(service.Description ?? "—")</p>
+                        <p class="mb-2"><strong>@service.Agents.Count</strong> agent(s) affecté(s)</p>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-warning" @onclick="() => Editer(service)">✏️</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DemanderSuppression(service)">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (showModal)
+{
+    <div class="modal fade show d-block" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(serviceEdite.IdService == 0 ? "Nouveau service" : "Modifier le service")</h5>
+                    <button class="btn-close" @onclick="() => showModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nom</label>
+                        <input class="form-control" @bind="serviceEdite.NomService" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" rows="3" @bind="serviceEdite.Description"></textarea>
+                    </div>
+                    @if (erreur != null) { <div class="alert alert-danger">@erreur</div> }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => showModal = false">Annuler</button>
+                    <button class="btn btn-primary" @onclick="Sauvegarder">Sauvegarder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+</PolicyGuard>
+
+<ConfirmDialog Visible="showConfirmDelete"
+               Title="Supprimer ce service ?"
+               Message="@confirmMessage"
+               ConfirmLabel="Supprimer"
+               OnConfirm="ConfirmerSuppression"
+               OnCancel="() => showConfirmDelete = false" />
+
+@code {
+    private List<Service> services = new();
+    private Service serviceEdite = new();
+    private bool showModal;
+    private string? erreur;
+    private bool showConfirmDelete;
+    private int serviceASupprimer;
+    private string confirmMessage = "";
+
+    protected override void OnInitialized() => Charger();
+
+    private void Charger() => services = ServiceService.GetAll();
+
+    private void OuvrirModal()
+    {
+        serviceEdite = new Service();
+        erreur = null;
+        showModal = true;
+    }
+
+    private void Editer(Service s)
+    {
+        serviceEdite = new Service { IdService = s.IdService, NomService = s.NomService, Description = s.Description };
+        erreur = null;
+        showModal = true;
+    }
+
+    private void Sauvegarder()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(serviceEdite.NomService))
+            {
+                erreur = "Le nom est obligatoire.";
+                return;
+            }
+            if (serviceEdite.IdService == 0)
+                ServiceService.Add(serviceEdite);
+            else
+                ServiceService.Update(serviceEdite);
+            Charger();
+            showModal = false;
+        }
+        catch (Exception ex) { erreur = ex.Message; }
+    }
+
+    private void DemanderSuppression(Service service)
+    {
+        serviceASupprimer = service.IdService;
+        confirmMessage = $"Supprimer le service « {service.NomService} » ? Les agents liés pourraient être affectés.";
+        showConfirmDelete = true;
+    }
+
+    private void ConfirmerSuppression()
+    {
+        showConfirmDelete = false;
+        try { ServiceService.Delete(serviceASupprimer); Charger(); }
+        catch (Exception ex) { erreur = ex.Message; }
+    }
+}

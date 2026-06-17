@@ -163,6 +163,87 @@ public class EmailService
         await EnvoyerAsync(emailAdmin, "Nouvelle demande de congé en attente — Mairie de Banikoara", corps, isHtml: true);
     }
 
+    public async Task EnvoyerRappelFinCongeAsync(string email, string nom, DateTime dateFin, int joursRestants)
+    {
+        var corps = $"""
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#e4eaf2;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#e4eaf2;padding:40px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+        <tr><td style="background:#0f2137;padding:24px 32px;">
+          <p style="margin:0;color:#c9a227;font-size:11px;letter-spacing:2px;text-transform:uppercase;">République du Bénin</p>
+          <h1 style="margin:6px 0 0;color:#fff;font-size:20px;">Mairie de Banikoara</h1>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <p style="font-size:15px;color:#334155;margin-top:0;">Bonjour <strong>{nom}</strong>,</p>
+          <div style="background:#fef9ec;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;padding:16px 20px;margin:20px 0;">
+            <p style="margin:0;font-size:15px;font-weight:700;color:#b45309;">
+              ⏰ Rappel : votre congé se termine dans <strong>{joursRestants} jour{(joursRestants > 1 ? "s" : "")}</strong>
+            </p>
+            <p style="margin:6px 0 0;font-size:13px;color:#92400e;">
+              Votre reprise est prévue le <strong>{dateFin.AddDays(1):dd/MM/yyyy}</strong>.
+            </p>
+          </div>
+          <p style="font-size:14px;color:#475569;">
+            Pensez à vous organiser pour votre retour. Si vous souhaitez revenir plus tôt, vous pouvez le signaler depuis votre espace personnel sur l'application.
+          </p>
+          <p style="text-align:center;margin:24px 0;">
+            <a href="{_baseUrl}/conges" style="background:#0f2137;color:#fff;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;display:inline-block;">
+              Accéder à mes congés
+            </a>
+          </p>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;">
+          <p style="font-size:11px;color:#94a3b8;text-align:center;margin:0;">Mairie de Banikoara — Service des Ressources Humaines</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>
+""";
+        await EnvoyerAsync(email,
+            $"Rappel : votre congé se termine dans {joursRestants} jour{(joursRestants > 1 ? "s" : "")} — Mairie de Banikoara",
+            corps, isHtml: true);
+    }
+
+    public async Task EnvoyerNotifRetourAnticipeAsync(
+        string emailAdmin, string nomAdmin, string nomAgent,
+        DateTime dateDebutPrevu, DateTime dateFinPrevu, DateTime dateRetourEffectif, int joursRecredites)
+    {
+        var corps = $"""
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#e4eaf2;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#e4eaf2;padding:40px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+        <tr><td style="background:#0f2137;padding:24px 32px;">
+          <p style="margin:0;color:#c9a227;font-size:11px;letter-spacing:2px;text-transform:uppercase;">République du Bénin</p>
+          <h1 style="margin:6px 0 0;color:#fff;font-size:20px;">Mairie de Banikoara</h1>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <p style="font-size:15px;color:#334155;margin-top:0;">Bonjour <strong>{nomAdmin}</strong>,</p>
+          <div style="background:#ecfdf5;border-left:4px solid #16a34a;border-radius:0 8px 8px 0;padding:16px 20px;margin:20px 0;">
+            <p style="margin:0;font-size:15px;font-weight:700;color:#166534;">🔄 Retour anticipé de congé</p>
+            <p style="margin:6px 0 0;font-size:13px;color:#166534;">L'agent <strong>{nomAgent}</strong> a signalé son retour anticipé.</p>
+          </div>
+          <table cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:8px;padding:16px;width:100%;margin:16px 0;">
+            <tr><td style="padding:4px 0;font-size:13px;color:#64748b;">Agent</td><td style="font-size:13px;font-weight:600;color:#0f2137;">{nomAgent}</td></tr>
+            <tr><td style="padding:4px 0;font-size:13px;color:#64748b;">Congé prévu</td><td style="font-size:13px;font-weight:600;color:#0f2137;">{dateDebutPrevu:dd/MM/yyyy} → {dateFinPrevu:dd/MM/yyyy}</td></tr>
+            <tr><td style="padding:4px 0;font-size:13px;color:#64748b;">Retour effectif</td><td style="font-size:13px;font-weight:700;color:#166534;">{dateRetourEffectif:dd/MM/yyyy}</td></tr>
+            <tr><td style="padding:4px 0;font-size:13px;color:#64748b;">Jours recrédités</td><td style="font-size:13px;font-weight:600;color:#0f2137;">{joursRecredites} jour(s) ouvré(s)</td></tr>
+          </table>
+          <p style="font-size:12px;color:#64748b;">Le statut de l'agent a été automatiquement remis à <strong>Actif</strong>.</p>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;">
+          <p style="font-size:11px;color:#94a3b8;text-align:center;margin:0;">Mairie de Banikoara — Service des Ressources Humaines</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>
+""";
+        await EnvoyerAsync(emailAdmin, $"Retour anticipé : {nomAgent} — Mairie de Banikoara", corps, isHtml: true);
+    }
+
     private async Task EnvoyerAsync(string destinataire, string sujet, string corps, bool isHtml = false)
     {
         if (!_smtp.Enabled || string.IsNullOrWhiteSpace(_smtp.Host))

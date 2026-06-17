@@ -3,6 +3,7 @@ using GestionPersonnelMairie.Components;
 using GestionPersonnelMairie.Core.Constants;
 using GestionPersonnelMairie.Data;
 using GestionPersonnelMairie.Infrastructure.Auth;
+using GestionPersonnelMairie.Infrastructure.Background;
 using GestionPersonnelMairie.Core.Enums;
 using GestionPersonnelMairie.Models;
 using GestionPersonnelMairie.Services;
@@ -86,6 +87,8 @@ builder.Services.AddSingleton<AuthStateService>();
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<CustomAuthStateProvider>());
+
+builder.Services.AddHostedService<CongeReminderService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

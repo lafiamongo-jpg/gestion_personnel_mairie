@@ -4,13 +4,13 @@
     <RestoreSuccess Condition=" '$(RestoreSuccess)' == '' ">True</RestoreSuccess>
     <RestoreTool Condition=" '$(RestoreTool)' == '' ">NuGet</RestoreTool>
     <ProjectAssetsFile Condition=" '$(ProjectAssetsFile)' == '' ">$(MSBuildThisFileDirectory)project.assets.json</ProjectAssetsFile>
-    <NuGetPackageRoot Condition=" '$(NuGetPackageRoot)' == '' ">/tmp/cursor-sandbox-cache/10021f649e908358cae8fda5ef3d421c/nuget</NuGetPackageRoot>
-    <NuGetPackageFolders Condition=" '$(NuGetPackageFolders)' == '' ">/tmp/cursor-sandbox-cache/10021f649e908358cae8fda5ef3d421c/nuget</NuGetPackageFolders>
+    <NuGetPackageRoot Condition=" '$(NuGetPackageRoot)' == '' ">/tmp/cursor-sandbox-cache/37e7a6ad17bafc1ba77dfc523a25eb42/nuget</NuGetPackageRoot>
+    <NuGetPackageFolders Condition=" '$(NuGetPackageFolders)' == '' ">/tmp/cursor-sandbox-cache/37e7a6ad17bafc1ba77dfc523a25eb42/nuget</NuGetPackageFolders>
     <NuGetProjectStyle Condition=" '$(NuGetProjectStyle)' == '' ">PackageReference</NuGetProjectStyle>
     <NuGetToolVersion Condition=" '$(NuGetToolVersion)' == '' ">7.0.0</NuGetToolVersion>
   </PropertyGroup>
   <ItemGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
-    <SourceRoot Include="/tmp/cursor-sandbox-cache/10021f649e908358cae8fda5ef3d421c/nuget/" />
+    <SourceRoot Include="/tmp/cursor-sandbox-cache/37e7a6ad17bafc1ba77dfc523a25eb42/nuget/" />
   </ItemGroup>
   <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <Import Project="$(NuGetPackageRoot)/microsoft.entityframeworkcore/10.0.5/buildTransitive/net10.0/Microsoft.EntityFrameworkCore.props" Condition="Exists('$(NuGetPackageRoot)/microsoft.entityframeworkcore/10.0.5/buildTransitive/net10.0/Microsoft.EntityFrameworkCore.props')" />
@@ -19,7 +19,7 @@
     <Import Project="$(NuGetPackageRoot)/microsoft.aspnetcore.app.internal.assets/10.0.0/build/Microsoft.AspNetCore.App.Internal.Assets.props" Condition="Exists('$(NuGetPackageRoot)/microsoft.aspnetcore.app.internal.assets/10.0.0/build/Microsoft.AspNetCore.App.Internal.Assets.props')" />
   </ImportGroup>
   <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
-    <PkgMicrosoft_CodeAnalysis_Analyzers Condition=" '$(PkgMicrosoft_CodeAnalysis_Analyzers)' == '' ">/tmp/cursor-sandbox-cache/10021f649e908358cae8fda5ef3d421c/nuget/microsoft.codeanalysis.analyzers/3.11.0</PkgMicrosoft_CodeAnalysis_Analyzers>
-    <PkgMicrosoft_EntityFrameworkCore_Tools Condition=" '$(PkgMicrosoft_EntityFrameworkCore_Tools)' == '' ">/tmp/cursor-sandbox-cache/10021f649e908358cae8fda5ef3d421c/nuget/microsoft.entityframeworkcore.tools/10.0.5</PkgMicrosoft_EntityFrameworkCore_Tools>
+    <PkgMicrosoft_CodeAnalysis_Analyzers Condition=" '$(PkgMicrosoft_CodeAnalysis_Analyzers)' == '' ">/tmp/cursor-sandbox-cache/37e7a6ad17bafc1ba77dfc523a25eb42/nuget/microsoft.codeanalysis.analyzers/3.11.0</PkgMicrosoft_CodeAnalysis_Analyzers>
+    <PkgMicrosoft_EntityFrameworkCore_Tools Condition=" '$(PkgMicrosoft_EntityFrameworkCore_Tools)' == '' ">/tmp/cursor-sandbox-cache/37e7a6ad17bafc1ba77dfc523a25eb42/nuget/microsoft.entityframeworkcore.tools/10.0.5</PkgMicrosoft_EntityFrameworkCore_Tools>
   </PropertyGroup>
 </Project>

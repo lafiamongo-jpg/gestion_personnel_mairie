@@ -7,10 +7,19 @@
 @inject AgentService AgentService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject AuthStateService AuthState
+@inject IJSRuntime JS
 
 <PageTitle>Gestion des Congés</PageTitle>
 
 <div class="container-fluid py-4">
+
+    @if (messageRetourAnticipe != null)
+    {
+        <div class="alert @(messageRetourAnticipe.StartsWith("✅") ? "alert-success" : "alert-danger") alert-dismissible shadow mb-3">
+            @messageRetourAnticipe
+            <button type="button" class="btn-close" @onclick="() => messageRetourAnticipe = null"></button>
+        </div>
+    }
 
     <!-- En-tête -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -106,11 +115,28 @@
                             }
                             else if (demande.Conge != null)
                             {
-                                <span class="text-muted" style="font-size:0.82rem">
+                                <div style="font-size:0.82rem;color:#6c757d;">
                                     📅 @demande.Conge.DateDebut.ToShortDateString()
                                     → @demande.Conge.DateFin.ToShortDateString()
                                     (@demande.Conge.Duree jours)
-                                </span>
+                                </div>
+                                @if (demande.Conge.RetourAnticipe && demande.Conge.DateRetourEffectif.HasValue)
+                                {
+                                    <span class="badge bg-info text-dark mt-1" style="font-size:0.72rem;">
+                                        🔄 Retour anticipé le @demande.Conge.DateRetourEffectif.Value.ToShortDateString()
+                                    </span>
+                                }
+                                else if (demande.Conge.Statut == "en_cours"
+                                    && demande.Conge.DateDebut <= DateTime.Today
+                                    && demande.Conge.DateFin > DateTime.Today
+                                    && !AuthState.PeutGererConges)
+                                {
+                                    <button class="btn btn-sm btn-outline-warning mt-1"
+                                            @onclick="() => DemanderRetourAnticipe(demande.Conge)"
+                                            title="Signaler que vous revenez avant la fin de votre congé">
+                                        🔄 Signaler mon retour anticipé
+                                    </button>
+                                }
                             }
                         </td>
                     </tr>
@@ -268,6 +294,7 @@
     private List<DemandeConge> toutesLesdemandes = new();
     private List<Agent> agents = new();
     private string ongletActif = "toutes";
+    private string? messageRetourAnticipe = null;
     private DemandeConge nouvelleDemande = new();
     private DemandeConge? demandeSelectionnee = null;
     private bool showModalDemande = false;
@@ -395,6 +422,32 @@
         catch (Exception ex)
         {
             motifRefus = ex.Message;
+        }
+    }
+
+    private async Task DemanderRetourAnticipe(GestionPersonnelMairie.Models.Conge conge)
+    {
+        var confirme = await JS.InvokeAsync<bool>("confirm",
+            "Confirmez-vous votre retour anticipé aujourd'hui ? Les jours non utilisés vous seront recrédités.");
+        if (!confirme) return;
+
+        try
+        {
+            await CongeService.RetourAnticipe(conge.IdConge);
+            RechargerDemandes();
+            messageRetourAnticipe = "✅ Votre retour anticipé a été enregistré. Votre solde de congés a été mis à jour.";
+            StateHasChanged();
+            await Task.Delay(5000);
+            messageRetourAnticipe = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            messageRetourAnticipe = $"❌ {ex.Message}";
+            StateHasChanged();
+            await Task.Delay(4000);
+            messageRetourAnticipe = null;
+            StateHasChanged();
         }
     }
 

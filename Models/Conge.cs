@@ -12,6 +12,10 @@ namespace GestionPersonnelMairie.Models
         public string? TypeConge { get; set; }
         public string Statut { get; set; } = "en_cours";
 
+        // Retour anticipé
+        public bool RetourAnticipe { get; set; } = false;
+        public DateTime? DateRetourEffectif { get; set; }
+
         // Clé étrangère
         public int IdDemande { get; set; }
 

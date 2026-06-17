@@ -150,6 +150,58 @@ public class CongeService
         }
     }
 
+    public async Task RetourAnticipe(int idConge)
+    {
+        var conge = _context.Conges
+            .Include(c => c.DemandeConge)
+                .ThenInclude(d => d.Agent)
+            .FirstOrDefault(c => c.IdConge == idConge)
+            ?? throw new InvalidOperationException("Congé introuvable.");
+
+        if (conge.Statut != "en_cours")
+            throw new InvalidOperationException("Ce congé n'est plus actif.");
+
+        var aujourd_hui = DateTime.Today;
+        if (aujourd_hui >= conge.DateFin)
+            throw new InvalidOperationException("Le congé est déjà terminé ou se termine aujourd'hui.");
+
+        // Jours non utilisés à recréditer (à partir de demain jusqu'à la fin prévue)
+        var joursNonUtilises = CalculerJoursOuvres(aujourd_hui.AddDays(1), conge.DateFin);
+
+        conge.RetourAnticipe = true;
+        conge.DateRetourEffectif = aujourd_hui;
+        conge.Statut = "termine";
+
+        var agent = conge.DemandeConge.Agent;
+        agent.SoldeCongeRestant += joursNonUtilises;
+        if (agent.Statut == Core.Enums.StatutAgent.EnConge)
+            agent.Statut = Core.Enums.StatutAgent.Actif;
+
+        _context.SaveChanges();
+
+        // Notifier les admins et superadmins
+        var admins = _context.Utilisateurs
+            .Include(u => u.Role)
+            .Where(u => (u.Role.NomRole == Roles.Admin || u.Role.NomRole == Roles.SuperAdmin) && u.EstActif)
+            .ToList();
+
+        foreach (var admin in admins)
+        {
+            _ = _emailService.EnvoyerNotifRetourAnticipeAsync(
+                admin.Email, admin.Nom, agent.NomComplet,
+                conge.DateDebut, conge.DateFin, aujourd_hui, joursNonUtilises);
+        }
+    }
+
+    public List<Conge> GetCongesEnCours()
+    {
+        return _context.Conges
+            .Include(c => c.DemandeConge)
+                .ThenInclude(d => d.Agent)
+            .Where(c => c.Statut == "en_cours")
+            .ToList();
+    }
+
     public void SupprimerDemande(int idDemande)
     {
         var demande = _context.DemandesConge.Find(idDemande);

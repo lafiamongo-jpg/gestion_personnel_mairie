@@ -426,3 +426,6 @@ C:/Users/HP/GestionPersonnelMairie/obj/Debug/net10.0/GestionP.CEE42E28.Up2Date
 /home/nahine/gestion_personnel_mairie/obj/Debug/net10.0/compressed/ov8q8opek1-{0}-bnftpjxxgb-bnftpjxxgb.gz
 /home/nahine/gestion_personnel_mairie/obj/Debug/net10.0/compressed/wlvachlwaq-{0}-kseru7b1z0-kseru7b1z0.gz
 /home/nahine/gestion_personnel_mairie/obj/Debug/net10.0/compressed/essu8u9fne-{0}-kseru7b1z0-kseru7b1z0.gz
+/home/nahine/gestion_personnel_mairie/bin/Debug/net10.0/global.json
+/home/nahine/gestion_personnel_mairie/obj/Debug/net10.0/compressed/9rfrtjri61-{0}-jjso0l5c0p-jjso0l5c0p.gz
+/home/nahine/gestion_personnel_mairie/obj/Debug/net10.0/compressed/q78icpdkh9-{0}-uzkidu1t1n-uzkidu1t1n.gz

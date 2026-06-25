@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/home/nahine/gestion_personnel_mairie/GestionPersonnelMairie.csproj": {}
+    "C:\\Users\\HP\\Gestion_mairie\\gestion_personnel_mairie\\GestionPersonnelMairie.csproj": {}
   },
   "projects": {
-    "/home/nahine/gestion_personnel_mairie/GestionPersonnelMairie.csproj": {
+    "C:\\Users\\HP\\Gestion_mairie\\gestion_personnel_mairie\\GestionPersonnelMairie.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/nahine/gestion_personnel_mairie/GestionPersonnelMairie.csproj",
+        "projectUniqueName": "C:\\Users\\HP\\Gestion_mairie\\gestion_personnel_mairie\\GestionPersonnelMairie.csproj",
         "projectName": "GestionPersonnelMairie",
-        "projectPath": "/home/nahine/gestion_personnel_mairie/GestionPersonnelMairie.csproj",
-        "packagesPath": "/tmp/cursor-sandbox-cache/37e7a6ad17bafc1ba77dfc523a25eb42/nuget",
-        "outputPath": "/home/nahine/gestion_personnel_mairie/obj/",
+        "projectPath": "C:\\Users\\HP\\Gestion_mairie\\gestion_personnel_mairie\\GestionPersonnelMairie.csproj",
+        "packagesPath": "C:\\Users\\HP\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\HP\\Gestion_mairie\\gestion_personnel_mairie\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/nahine/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\HP\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -51,7 +51,7 @@
             "Microsoft.AspNetCore.App.Internal.Assets": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[10.0.0, )",
+              "version": "[10.0.2, )",
               "autoReferenced": true
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
@@ -92,7 +92,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/home/nahine/.dotnet/sdk/10.0.100/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.102/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

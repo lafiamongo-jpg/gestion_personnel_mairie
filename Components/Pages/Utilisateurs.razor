@@ -190,7 +190,10 @@
                     {
                         @if (!agentsSansCompte.Any())
                         {
-                            <p class="text-muted mb-0">Tous les agents ont déjà un compte.</p>
+                            <div class="alert alert-light border mb-0">
+                                Tous les agents ont déjà un compte.
+                                Utilisez l'onglet <strong>Admin / SuperAdmin</strong> pour créer un compte administrateur sans fiche agent.
+                            </div>
                         }
                         else
                         {
@@ -308,14 +311,26 @@
     private void OuvrirModalCreer()
     {
         erreurCreer = null;
-        modeCreer = "agent";
+        agentsSansCompte = UtilisateurService.GetAgentsSansCompte();
         nouveauAgentId = 0;
         nouveauNom = "";
         nouveauEmail = "";
-        var roleAgent = roles.FirstOrDefault(r => r.NomRole == Roles.Agent);
-        if (roleAgent != null)
-            nouveauRoleId = roleAgent.IdRole;
-        agentsSansCompte = UtilisateurService.GetAgentsSansCompte();
+
+        if (agentsSansCompte.Any())
+        {
+            modeCreer = "agent";
+            var roleAgent = roles.FirstOrDefault(r => r.NomRole == Roles.Agent);
+            if (roleAgent != null)
+                nouveauRoleId = roleAgent.IdRole;
+        }
+        else
+        {
+            modeCreer = "admin";
+            var roleAdmin = roles.FirstOrDefault(r => r.NomRole == Roles.Admin);
+            if (roleAdmin != null)
+                nouveauRoleId = roleAdmin.IdRole;
+        }
+
         showModalCreer = true;
     }
 

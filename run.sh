@@ -13,7 +13,7 @@ elif ! sqlite3 GestionPersonnel.db "SELECT 1 FROM pragma_table_info('Utilisateur
 fi
 
 echo "→ Emails SMTP : appsettings.Development.json (actif en mode Development)"
-echo "→ Compte SuperAdmin : lafiamongo@gmail.com / mot de passe : 12345"
+echo "→ Compte SuperAdmin : lafiamongo@gmail.com / mot de passe : admin123"
 
 if [ -f bin/Debug/net10.0/GestionPersonnelMairie.dll ]; then
   dotnet run --no-build "$@"
